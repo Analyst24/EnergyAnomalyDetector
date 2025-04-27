@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if title %}
+        <title>{{ title }} - Energy Anomaly Detection</title>
+    {% else %}
+        <title>Energy Anomaly Detection System</title>
+    {% endif %}
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <!-- Code highlighting -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/prism.css') }}">
+    
+    {% block styles %}{% endblock %}
+</head>
+<body class="bg-dark text-light">
+    {% include 'includes/navbar.html' %}
+    
+    <div class="container mt-4">
+        {% include 'includes/flash_messages.html' %}
+        
+        {% block content %}{% endblock %}
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer mt-5 py-3 bg-dark text-light">
+        <div class="container text-center">
+            <span>&copy; 2025 Energy Anomaly Detection System - Designed for Offline Use</span>
+        </div>
+    </footer>
+    
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/prism.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/clipboard.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/custom.js') }}"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>
