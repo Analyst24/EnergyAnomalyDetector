@@ -1,8 +1,8 @@
 """
-Main module for the Energy Anomaly Detection System
+Main blueprint for home page and general navigation.
 """
 from flask import Blueprint
 
-main = Blueprint('main', __name__)
+main_bp = Blueprint('main', __name__)
 
-from . import routes
+from app.main import routes
