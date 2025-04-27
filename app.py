@@ -349,40 +349,87 @@ def main():
             st.markdown(f"### Welcome, {st.session_state.username}")
             st.markdown("---")
             
-            # Aggressively hide init message from sidebar
+            # Aggressively hide init message from sidebar with multiple techniques
             hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
             footer {visibility: hidden;}
             .stDeployButton {display:none;}
             
-            /* Aggressive init item removal */
+            /* Aggressive init item removal - multiple selectors */
+            /* Hide first item in sidebar (init) */
             div[data-testid="stSidebarNav"] ul > li:first-child {display: none !important;}
+            
+            /* Hide any item with href="/" (init) */
             section[data-testid="stSidebar"] div > ul > li:has(a[href="/"]) {display: none !important;}
             a[href="/"] {display: none !important;}
+            
+            /* Hide any item with text containing "init" (case insensitive) */
+            li:has(a:contains("init")) {display: none !important;}
+            li:has(a:contains("Init")) {display: none !important;}
             </style>
             """
             st.markdown(hide_streamlit_style, unsafe_allow_html=True)
             
-            # Execute JavaScript to remove init element
+            # Execute JavaScript to completely override the sidebar navigation
             js_code = """
             <script>
+            // More aggressive approach - completely override the sidebar navigation
             function removeInitElement() {
-                // Get all sidebar navigation items
-                const sidebarItems = document.querySelectorAll('[data-testid="stSidebar"] a');
+                // Get all navigation containers in the sidebar
+                const navContainers = document.querySelectorAll('[data-testid="stSidebarNav"]');
                 
-                // Find and remove the "init" item
-                for (let item of sidebarItems) {
-                    if (item.href.endsWith('/') || item.textContent.toLowerCase().includes('init')) {
-                        const parentLi = item.closest('li');
-                        if (parentLi) parentLi.style.display = 'none';
-                    }
+                if (navContainers.length > 0) {
+                    const navContainer = navContainers[0];
+                    
+                    // Get all navigation items
+                    const navItems = navContainer.querySelectorAll('li');
+                    
+                    // Check each item and hide if it's the "init" item or the first item
+                    navItems.forEach((item, index) => {
+                        const link = item.querySelector('a');
+                        
+                        // Hide the item if:
+                        // 1. It's the first item (index 0)
+                        // 2. Its href ends with '/'
+                        // 3. Its text contains 'init' (case insensitive)
+                        if (index === 0 || 
+                            (link && link.href && link.href.endsWith('/')) || 
+                            (link && link.textContent && link.textContent.toLowerCase().includes('init'))) {
+                            
+                            // Multiple techniques to ensure it's hidden
+                            item.style.display = 'none';
+                            item.style.visibility = 'hidden';
+                            item.style.height = '0';
+                            item.style.width = '0';
+                            item.style.opacity = '0';
+                            item.style.pointerEvents = 'none';
+                            item.style.position = 'absolute';
+                            item.setAttribute('aria-hidden', 'true');
+                            
+                            // Remove from DOM (most aggressive)
+                            // item.remove();
+                        }
+                    });
                 }
             }
             
-            // Run on load and periodically to catch dynamic content
-            document.addEventListener('DOMContentLoaded', removeInitElement);
-            setInterval(removeInitElement, 1000);
+            // Run immediately and then periodically to catch dynamic content
+            removeInitElement();
+            
+            // Create a MutationObserver to watch for DOM changes
+            const observer = new MutationObserver(function(mutations) {
+                removeInitElement();
+            });
+            
+            // Start observing the document body for DOM changes
+            observer.observe(document.body, { 
+                childList: true, 
+                subtree: true 
+            });
+            
+            // Also run periodically as a fallback
+            setInterval(removeInitElement, 500);
             </script>
             """
             st.components.v1.html(js_code, height=0)
