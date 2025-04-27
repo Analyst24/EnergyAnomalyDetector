@@ -158,7 +158,8 @@ def main():
             min_value=0.01,
             max_value=0.2,
             value=0.05,
-            step=0.01
+            step=0.01,
+            key="isolation_forest_contamination"
         )
         
         isolation_forest_estimators = st.slider(
@@ -166,7 +167,8 @@ def main():
             min_value=50,
             max_value=500,
             value=100,
-            step=10
+            step=10,
+            key="isolation_forest_estimators"
         )
         
         # AutoEncoder settings
@@ -177,7 +179,8 @@ def main():
             min_value=90,
             max_value=99,
             value=95,
-            step=1
+            step=1,
+            key="autoencoder_threshold"
         )
         
         autoencoder_epochs = st.slider(
@@ -185,7 +188,8 @@ def main():
             min_value=10,
             max_value=100,
             value=50,
-            step=5
+            step=5,
+            key="autoencoder_epochs"
         )
         
         # K-Means settings
@@ -196,7 +200,8 @@ def main():
             min_value=2,
             max_value=20,
             value=5,
-            step=1
+            step=1,
+            key="kmeans_clusters"
         )
         
         kmeans_threshold = st.slider(
@@ -204,7 +209,8 @@ def main():
             min_value=90,
             max_value=99,
             value=95,
-            step=1
+            step=1,
+            key="kmeans_threshold"
         )
         
         # Save button
