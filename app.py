@@ -454,11 +454,11 @@ def main():
             st.markdown('<div class="sidebar-menu">', unsafe_allow_html=True)
             st.markdown('<div class="menu-title">MAIN NAVIGATION</div>', unsafe_allow_html=True)
             
-            # Navigation menu items
+            # Navigation menu items with correct Streamlit URLs
             menu_items = [
-                {"name": "Dashboard", "icon": "📊", "url": "/pages/02_Dashboard.py"},
-                {"name": "Upload Data", "icon": "📤", "url": "/pages/03_Upload_Data.py"},
-                {"name": "Run Detection", "icon": "🔍", "url": "/pages/04_Run_Detection.py"}
+                {"name": "Dashboard", "icon": "📊", "url": "02_Dashboard"},
+                {"name": "Upload Data", "icon": "📤", "url": "03_Upload_Data"},
+                {"name": "Run Detection", "icon": "🔍", "url": "04_Run_Detection"}
             ]
             
             for item in menu_items:
@@ -475,11 +475,11 @@ def main():
             st.markdown('<div class="sidebar-menu">', unsafe_allow_html=True)
             st.markdown('<div class="menu-title">ANALYSIS & REPORTS</div>', unsafe_allow_html=True)
             
-            # Analysis menu items
+            # Analysis menu items with correct Streamlit URLs
             analysis_items = [
-                {"name": "Results", "icon": "📈", "url": "/pages/05_Results.py"},
-                {"name": "Model Insights", "icon": "💡", "url": "/pages/06_Model_Insights.py"},
-                {"name": "Recommendations", "icon": "📋", "url": "/pages/07_Recommendations.py"}
+                {"name": "Results", "icon": "📈", "url": "05_Results"},
+                {"name": "Model Insights", "icon": "💡", "url": "06_Model_Insights"},
+                {"name": "Recommendations", "icon": "📋", "url": "07_Recommendations"}
             ]
             
             for item in analysis_items:
@@ -496,9 +496,9 @@ def main():
             st.markdown('<div class="sidebar-menu">', unsafe_allow_html=True)
             st.markdown('<div class="menu-title">SYSTEM</div>', unsafe_allow_html=True)
             
-            # System menu items
+            # System menu items with correct Streamlit URL
             st.markdown(f"""
-            <a href="/pages/08_Settings.py" target="_self" class="menu-item">
+            <a href="08_Settings" target="_self" class="menu-item">
                 <div class="menu-icon">⚙️</div>
                 <div>Settings</div>
             </a>
