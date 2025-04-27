@@ -485,22 +485,50 @@ def main():
             st.markdown('<div class="sidebar-menu">', unsafe_allow_html=True)
             st.markdown('<div class="menu-title">MAIN NAVIGATION</div>', unsafe_allow_html=True)
             
-            # Create direct Streamlit buttons for navigation
+            # Menu items for the main navigation section
             menu_items = [
                 {"name": "Dashboard", "icon": "📊", "page": "02_Dashboard"},
                 {"name": "Upload Data", "icon": "📤", "page": "03_Upload_Data"},
                 {"name": "Run Detection", "icon": "🔍", "page": "04_Run_Detection"}
             ]
             
-            # Function to navigate to a different page
-            def navigate_to(page):
-                st.session_state["current_page"] = page
-                st.rerun()
+            # Create JavaScript navigation function
+            st.markdown("""
+            <script>
+            function navigateTo(page) {
+                // Navigate to the page
+                window.location.href = page;
+            }
+            </script>
+            """, unsafe_allow_html=True)
             
-            for item in menu_items:
-                if st.button(f"{item['icon']} {item['name']}", key=f"nav_{item['page']}", use_container_width=True):
-                    # Set the page to navigate to and rerun
-                    navigate_to(item['page'])
+            # Create buttons with onClick JavaScript navigation
+            for i, item in enumerate(menu_items):
+                btn_id = f"nav_btn_{i}"
+                st.markdown(f"""
+                <button 
+                    id="{btn_id}" 
+                    style="
+                        width: 100%; 
+                        padding: 8px 12px; 
+                        margin: 4px 0;
+                        background-color: rgba(75, 123, 236, 0.1);
+                        color: #f0f0f0;
+                        border: none;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        text-align: left;
+                        display: flex;
+                        align-items: center;
+                        transition: background-color 0.2s;
+                    "
+                    onmouseover="this.style.backgroundColor='rgba(75, 123, 236, 0.3)';"
+                    onmouseout="this.style.backgroundColor='rgba(75, 123, 236, 0.1)';"
+                    onclick="navigateTo('{item['page']}')">
+                    <span style="margin-right: 10px; width: 20px; text-align: center;">{item['icon']}</span>
+                    <span>{item['name']}</span>
+                </button>
+                """, unsafe_allow_html=True)
             
             st.markdown('</div>', unsafe_allow_html=True)
             
@@ -508,17 +536,40 @@ def main():
             st.markdown('<div class="sidebar-menu">', unsafe_allow_html=True)
             st.markdown('<div class="menu-title">ANALYSIS & REPORTS</div>', unsafe_allow_html=True)
             
-            # Analysis menu items using native Streamlit buttons
+            # Analysis menu items
             analysis_items = [
                 {"name": "Results", "icon": "📈", "page": "05_Results"},
                 {"name": "Model Insights", "icon": "💡", "page": "06_Model_Insights"},
                 {"name": "Recommendations", "icon": "📋", "page": "07_Recommendations"}
             ]
             
-            for item in analysis_items:
-                if st.button(f"{item['icon']} {item['name']}", key=f"nav_{item['page']}", use_container_width=True):
-                    # Use the same navigation function
-                    navigate_to(item['page'])
+            # Create buttons with onClick JavaScript navigation for analysis items
+            for i, item in enumerate(analysis_items):
+                btn_id = f"analysis_btn_{i}"
+                st.markdown(f"""
+                <button 
+                    id="{btn_id}" 
+                    style="
+                        width: 100%; 
+                        padding: 8px 12px; 
+                        margin: 4px 0;
+                        background-color: rgba(75, 123, 236, 0.1);
+                        color: #f0f0f0;
+                        border: none;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        text-align: left;
+                        display: flex;
+                        align-items: center;
+                        transition: background-color 0.2s;
+                    "
+                    onmouseover="this.style.backgroundColor='rgba(75, 123, 236, 0.3)';"
+                    onmouseout="this.style.backgroundColor='rgba(75, 123, 236, 0.1)';"
+                    onclick="navigateTo('{item['page']}')">
+                    <span style="margin-right: 10px; width: 20px; text-align: center;">{item['icon']}</span>
+                    <span>{item['name']}</span>
+                </button>
+                """, unsafe_allow_html=True)
             
             st.markdown('</div>', unsafe_allow_html=True)
             
@@ -526,9 +577,32 @@ def main():
             st.markdown('<div class="sidebar-menu">', unsafe_allow_html=True)
             st.markdown('<div class="menu-title">SYSTEM</div>', unsafe_allow_html=True)
             
-            # System menu items using the same navigation function
-            if st.button("⚙️ Settings", key="nav_settings", use_container_width=True):
-                navigate_to("08_Settings")
+            # System menu items with JavaScript navigation
+            settings_btn_id = "settings_btn"
+            st.markdown(f"""
+            <button 
+                id="{settings_btn_id}" 
+                style="
+                    width: 100%; 
+                    padding: 8px 12px; 
+                    margin: 4px 0;
+                    background-color: rgba(75, 123, 236, 0.1);
+                    color: #f0f0f0;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    text-align: left;
+                    display: flex;
+                    align-items: center;
+                    transition: background-color 0.2s;
+                "
+                onmouseover="this.style.backgroundColor='rgba(75, 123, 236, 0.3)';"
+                onmouseout="this.style.backgroundColor='rgba(75, 123, 236, 0.1)';"
+                onclick="navigateTo('08_Settings')">
+                <span style="margin-right: 10px; width: 20px; text-align: center;">⚙️</span>
+                <span>Settings</span>
+            </button>
+            """, unsafe_allow_html=True)
             
             st.markdown('</div>', unsafe_allow_html=True)
             
