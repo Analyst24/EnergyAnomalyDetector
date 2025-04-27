@@ -1,8 +1,8 @@
 """
-Detection module for the Energy Anomaly Detection System
+Detection blueprint for anomaly detection algorithms.
 """
 from flask import Blueprint
 
-detection = Blueprint('detection', __name__, url_prefix='/detection')
+detection_bp = Blueprint('detection', __name__, url_prefix='/detection')
 
-from . import routes
+from app.detection import routes
