@@ -1,8 +1,4 @@
 """
-Main blueprint for home page and general navigation.
+Main module for the Energy Anomaly Detection System.
 """
-from flask import Blueprint
-
-main_bp = Blueprint('main', __name__)
-
-from app.main import routes
+from app.main.routes import main_bp

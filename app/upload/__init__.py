@@ -1,8 +1,4 @@
 """
-Upload blueprint for handling file uploads and parsing.
+Upload module for the Energy Anomaly Detection System.
 """
-from flask import Blueprint
-
-upload_bp = Blueprint('upload', __name__, url_prefix='/upload')
-
-from app.upload import routes
+from app.upload.routes import upload_bp

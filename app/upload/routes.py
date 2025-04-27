@@ -1,258 +1,291 @@
 """
-Routes for file upload and data import.
+Upload routes for the Energy Anomaly Detection System.
 """
 import os
 import pandas as pd
-import numpy as np
-import json
-from datetime import datetime
-from werkzeug.utils import secure_filename
-from flask import render_template, redirect, url_for, flash, request, current_app, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, current_app
 from flask_login import login_required, current_user
+from werkzeug.utils import secure_filename
 from app import db
-from app.upload import upload_bp
-from app.upload.forms import UploadDatasetForm, DataPreviewForm
 from app.models import Dataset
+from app.upload.forms import UploadForm
+from datetime import datetime
+import uuid
 
+# Create blueprint
+upload_bp = Blueprint('upload', __name__)
 
-@upload_bp.route('/', methods=['GET', 'POST'])
+def allowed_file(filename):
+    """Check if the file extension is allowed."""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'csv'
+
+def validate_dataset(df):
+    """
+    Validate that the uploaded dataset contains required columns.
+    
+    Args:
+        df (pandas.DataFrame): The dataset to validate
+        
+    Returns:
+        tuple: (is_valid, message)
+    """
+    # Check if required columns exist
+    required_columns = ['timestamp', 'consumption']
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    
+    if missing_columns:
+        return False, f"Missing required columns: {', '.join(missing_columns)}"
+    
+    # Check if timestamp column can be parsed
+    try:
+        pd.to_datetime(df['timestamp'])
+    except Exception:
+        return False, "Timestamp column could not be parsed. Please ensure it's in a standard date-time format."
+    
+    # Check if consumption column is numeric
+    if not pd.api.types.is_numeric_dtype(df['consumption']):
+        return False, "Consumption column must contain numeric values."
+    
+    # Check if there's enough data
+    if len(df) < 10:
+        return False, "Dataset contains too few rows (minimum 10 required)."
+    
+    return True, "Dataset is valid."
+
+@upload_bp.route('/upload')
 @login_required
 def index():
-    """Upload dataset form page."""
-    form = UploadDatasetForm()
+    """Render the upload page."""
+    # Initialize upload form
+    form = UploadForm()
+    
+    # Get user's datasets
+    datasets = Dataset.query.filter_by(user_id=current_user.id).all()
+    
+    # Render upload page with form and datasets
+    return render_template(
+        'upload/index.html',
+        active_page='upload',
+        form=form,
+        datasets=datasets
+    )
+
+@upload_bp.route('/upload/file', methods=['POST'])
+@login_required
+def upload_file():
+    """Handle file upload."""
+    form = UploadForm()
     
     if form.validate_on_submit():
-        # Get the uploaded file
         file = form.file.data
-        filename = secure_filename(file.filename)
         
-        # Create uploads directory if it doesn't exist
-        uploads_dir = current_app.config['UPLOAD_FOLDER']
-        os.makedirs(uploads_dir, exist_ok=True)
+        # Check if file was selected
+        if not file:
+            flash('No file selected', 'danger')
+            return redirect(url_for('upload.index'))
         
-        # Generate a unique filename
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        user_id = current_user.id
-        unique_filename = f"{user_id}_{timestamp}_{filename}"
-        file_path = os.path.join(uploads_dir, unique_filename)
+        # Check if the file is allowed
+        if not allowed_file(file.filename):
+            flash('Only CSV files are allowed', 'danger')
+            return redirect(url_for('upload.index'))
         
-        # Save the file
-        file.save(file_path)
-        
-        # Try to parse the file for preview
         try:
-            # Get file extension
-            _, ext = os.path.splitext(filename)
-            ext = ext.lower()
+            # Read the file into a pandas DataFrame
+            df = pd.read_csv(file, header=0 if form.has_header.data else None)
             
-            # Parse based on file type
-            if ext == '.csv':
-                df = pd.read_csv(file_path)
-            elif ext in ['.xlsx', '.xls']:
-                df = pd.read_excel(file_path)
-            elif ext == '.json':
-                df = pd.read_json(file_path)
-            elif ext == '.txt':
-                # Try to detect delimiter
-                df = pd.read_csv(file_path, sep=None, engine='python')
-            else:
-                flash('Unsupported file format.', 'danger')
+            # If file doesn't have headers, assign default ones
+            if not form.has_header.data:
+                df.columns = [f'col_{i}' for i in range(len(df.columns))]
+                # Try to rename the first two columns to defaults if they exist
+                if len(df.columns) >= 2:
+                    df = df.rename(columns={'col_0': 'timestamp', 'col_1': 'consumption'})
+            
+            # Validate the dataset
+            is_valid, message = validate_dataset(df)
+            if not is_valid:
+                flash(message, 'danger')
                 return redirect(url_for('upload.index'))
             
-            # Store temp info in session
-            session['upload_file_path'] = file_path
-            session['upload_file_name'] = filename
-            session['upload_file_size'] = os.path.getsize(file_path)
-            session['upload_dataset_name'] = form.name.data
-            session['upload_dataset_description'] = form.description.data
-            session['upload_has_header'] = form.has_header.data
-            session['upload_has_timestamp'] = form.has_timestamp.data
-            session['upload_parse_timestamps'] = form.parse_timestamps.data
+            # Create a unique filename to avoid conflicts
+            original_filename = secure_filename(file.filename)
+            filename = f"{uuid.uuid4().hex}_{original_filename}"
             
-            # Get preview of data and store column names
-            preview_data = df.head(10).to_dict('records')
-            session['upload_columns'] = df.columns.tolist()
+            # Create the upload directory if it doesn't exist
+            upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'])
+            os.makedirs(upload_dir, exist_ok=True)
             
-            # Guess timestamp and target columns
-            timestamp_col = None
-            if form.has_timestamp.data:
-                # Try to find timestamp column
-                for col in df.columns:
-                    if 'time' in col.lower() or 'date' in col.lower():
-                        timestamp_col = col
-                        break
+            # Save file to disk
+            file_path = os.path.join(upload_dir, filename)
+            df.to_csv(file_path, index=False)
             
-            # Guess target column (energy consumption)
-            target_col = None
-            for col in df.columns:
-                if any(term in col.lower() for term in ['energy', 'consumption', 'power', 'kwh', 'kw']):
-                    target_col = col
-                    break
+            # Get time period of the dataset
+            try:
+                df['timestamp'] = pd.to_datetime(df['timestamp'])
+                start_date = df['timestamp'].min()
+                end_date = df['timestamp'].max()
+                time_period = f"{start_date.strftime('%b %Y')} - {end_date.strftime('%b %Y')}"
+            except:
+                time_period = "Unknown"
             
-            # If no target found, use first numeric column
-            if target_col is None:
-                for col in df.columns:
-                    if pd.api.types.is_numeric_dtype(df[col]):
-                        target_col = col
-                        break
-            
-            return render_template('upload/preview.html',
-                                  title='Data Preview',
-                                  preview_data=preview_data,
-                                  columns=df.columns.tolist(),
-                                  timestamp_col=timestamp_col,
-                                  target_col=target_col,
-                                  dataset_name=form.name.data,
-                                  file_name=filename)
-        
-        except Exception as e:
-            flash(f'Error parsing file: {str(e)}', 'danger')
-            # Clean up the file
-            if os.path.exists(file_path):
-                os.remove(file_path)
-            return redirect(url_for('upload.index'))
-    
-    return render_template('upload/index.html', title='Upload Dataset', form=form)
-
-
-@upload_bp.route('/preview', methods=['GET', 'POST'])
-@login_required
-def preview():
-    """Preview and confirm dataset."""
-    # Check if we have upload data in session
-    if not all(key in session for key in [
-        'upload_file_path', 
-        'upload_file_name', 
-        'upload_file_size', 
-        'upload_dataset_name', 
-        'upload_columns'
-    ]):
-        flash('No upload data found. Please upload a file first.', 'warning')
-        return redirect(url_for('upload.index'))
-    
-    form = DataPreviewForm()
-    
-    if form.validate_on_submit():
-        if form.back.data:
-            return redirect(url_for('upload.index'))
-        
-        # Get form data
-        timestamp_column = form.timestamp_column.data
-        target_column = form.target_column.data
-        
-        # Get session data
-        file_path = session['upload_file_path']
-        filename = session['upload_file_name']
-        file_size = session['upload_file_size']
-        dataset_name = session['upload_dataset_name']
-        description = session.get('upload_dataset_description', '')
-        has_header = session.get('upload_has_header', True)
-        has_timestamp = session.get('upload_has_timestamp', True)
-        parse_timestamps = session.get('upload_parse_timestamps', True)
-        
-        try:
-            # Load the data to get row and column count
-            _, ext = os.path.splitext(filename)
-            ext = ext.lower()
-            
-            if ext == '.csv':
-                df = pd.read_csv(file_path)
-            elif ext in ['.xlsx', '.xls']:
-                df = pd.read_excel(file_path)
-            elif ext == '.json':
-                df = pd.read_json(file_path)
-            elif ext == '.txt':
-                df = pd.read_csv(file_path, sep=None, engine='python')
-            
-            # Create dataset record
+            # Create database record
             dataset = Dataset(
-                name=dataset_name,
-                description=description,
-                filename=filename,
+                name=form.name.data,
+                description=form.description.data,
+                filename=original_filename,
                 file_path=file_path,
-                file_size=file_size,
-                file_type=ext[1:],  # Remove the dot
+                file_size=os.path.getsize(file_path),
+                file_type='csv',
                 row_count=len(df),
                 column_count=len(df.columns),
-                has_timestamps=has_timestamp,
-                user_id=current_user.id
+                has_timestamps=True,
+                user_id=current_user.id,
+                dataset_metadata={
+                    'columns': df.columns.tolist(),
+                    'time_period': time_period
+                }
             )
             
-            # Add and commit to database
             db.session.add(dataset)
             db.session.commit()
             
-            # Clear session data
-            for key in list(session.keys()):
-                if key.startswith('upload_'):
-                    session.pop(key, None)
+            flash(f'Dataset "{form.name.data}" uploaded successfully with {len(df)} rows and {len(df.columns)} columns.', 'success')
+            return redirect(url_for('upload.index'))
             
-            flash(f'Dataset "{dataset_name}" uploaded successfully!', 'success')
-            return redirect(url_for('dashboard.view_dataset', dataset_id=dataset.id))
-        
         except Exception as e:
-            flash(f'Error saving dataset: {str(e)}', 'danger')
-            return redirect(url_for('upload.preview'))
+            flash(f'Error processing file: {str(e)}', 'danger')
+            return redirect(url_for('upload.index'))
     
-    # Pre-populate form if coming from upload
-    if request.method == 'GET':
-        timestamp_col = request.args.get('timestamp_col', '')
-        target_col = request.args.get('target_col', '')
-        form.timestamp_column.data = timestamp_col
-        form.target_column.data = target_col
+    # If form validation failed
+    for field, errors in form.errors.items():
+        for error in errors:
+            flash(f'{getattr(form, field).label.text}: {error}', 'danger')
     
-    # Get data for preview
-    file_path = session['upload_file_path']
+    return redirect(url_for('upload.index'))
+
+@upload_bp.route('/upload/preview/<int:id>')
+@login_required
+def preview_dataset(id):
+    """Preview a dataset."""
+    dataset = Dataset.query.filter_by(id=id, user_id=current_user.id).first_or_404()
+    
     try:
-        # Get file extension
-        _, ext = os.path.splitext(session['upload_file_name'])
-        ext = ext.lower()
+        # Read the dataset file
+        df = pd.read_csv(dataset.file_path)
         
-        # Parse based on file type
-        if ext == '.csv':
-            df = pd.read_csv(file_path)
-        elif ext in ['.xlsx', '.xls']:
-            df = pd.read_excel(file_path)
-        elif ext == '.json':
-            df = pd.read_json(file_path)
-        elif ext == '.txt':
-            df = pd.read_csv(file_path, sep=None, engine='python')
+        # Get basic stats
+        stats = {
+            'row_count': len(df),
+            'column_count': len(df.columns),
+            'columns': df.columns.tolist(),
+            'has_nulls': df.isnull().any().any(),
+            'null_count': df.isnull().sum().sum()
+        }
         
+        # Get preview data (first 10 rows)
         preview_data = df.head(10).to_dict('records')
-        columns = df.columns.tolist()
         
-        return render_template('upload/preview.html',
-                              title='Data Preview',
-                              form=form,
-                              preview_data=preview_data,
-                              columns=columns,
-                              dataset_name=session['upload_dataset_name'],
-                              file_name=session['upload_file_name'])
-    
+        return render_template(
+            'upload/preview.html',
+            active_page='upload',
+            dataset=dataset,
+            stats=stats,
+            preview_data=preview_data,
+            columns=df.columns.tolist()
+        )
     except Exception as e:
-        flash(f'Error parsing file: {str(e)}', 'danger')
+        flash(f'Error previewing dataset: {str(e)}', 'danger')
         return redirect(url_for('upload.index'))
 
-
-@upload_bp.route('/cancel')
+@upload_bp.route('/upload/delete/<int:id>')
 @login_required
-def cancel():
-    """Cancel upload and clean up temporary files."""
-    # Check if we have a file path in session
-    if 'upload_file_path' in session:
-        file_path = session['upload_file_path']
-        
-        # Remove the file if it exists
-        if os.path.exists(file_path):
-            try:
-                os.remove(file_path)
-            except Exception as e:
-                flash(f'Error removing temporary file: {str(e)}', 'warning')
-        
-        # Clear session data
-        for key in list(session.keys()):
-            if key.startswith('upload_'):
-                session.pop(key, None)
+def delete_dataset(id):
+    """Delete a dataset."""
+    dataset = Dataset.query.filter_by(id=id, user_id=current_user.id).first_or_404()
     
-    flash('Upload cancelled.', 'info')
-    return redirect(url_for('dashboard.datasets'))
+    try:
+        # Delete the file from disk
+        if os.path.exists(dataset.file_path):
+            os.remove(dataset.file_path)
+        
+        # Delete database record
+        db.session.delete(dataset)
+        db.session.commit()
+        
+        flash(f'Dataset "{dataset.name}" deleted successfully.', 'success')
+    except Exception as e:
+        flash(f'Error deleting dataset: {str(e)}', 'danger')
+    
+    return redirect(url_for('upload.index'))
+
+@upload_bp.route('/upload/download_sample')
+@login_required
+def download_sample():
+    """Download a sample CSV file."""
+    # Create a sample DataFrame
+    dates = pd.date_range(start='2023-01-01', periods=24*7, freq='H')
+    
+    # Create consumption data with day/night pattern and weekday/weekend differences
+    consumption = []
+    for date in dates:
+        hour = date.hour
+        is_weekend = date.dayofweek >= 5  # 5 = Saturday, 6 = Sunday
+        
+        # Base consumption
+        if 7 <= hour <= 22:  # Daytime
+            base = 85 if is_weekend else 110
+        else:  # Nighttime
+            base = 45 if is_weekend else 50
+        
+        # Add some randomness
+        noise = pd.np.random.normal(0, 5)
+        consumption.append(base + noise)
+    
+    # Temperature with day/night pattern
+    temperature = []
+    for date in dates:
+        hour = date.hour
+        # Base temperature
+        if 10 <= hour <= 16:  # Midday
+            base = 25
+        elif 6 <= hour <= 9 or 17 <= hour <= 21:  # Morning/Evening
+            base = 22
+        else:  # Night
+            base = 19
+        
+        # Add some randomness
+        noise = pd.np.random.normal(0, 1.5)
+        temperature.append(base + noise)
+    
+    # Humidity
+    humidity = []
+    for i in range(len(dates)):
+        base = 50
+        # Higher humidity at night and early morning
+        if dates[i].hour < 8 or dates[i].hour > 20:
+            base = 65
+        # Add some randomness
+        noise = pd.np.random.normal(0, 5)
+        humidity.append(max(min(base + noise, 100), 0))  # Clamp between 0 and 100
+    
+    # Create the DataFrame
+    df = pd.DataFrame({
+        'timestamp': dates,
+        'consumption': consumption,
+        'temperature': temperature,
+        'humidity': humidity
+    })
+    
+    # Format timestamp as string
+    df['timestamp'] = df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+    
+    # Create a temporary file
+    temp_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'sample_energy_data.csv')
+    df.to_csv(temp_path, index=False)
+    
+    # Send the file
+    return send_file(
+        temp_path,
+        as_attachment=True,
+        download_name='sample_energy_data.csv',
+        mimetype='text/csv'
+    )

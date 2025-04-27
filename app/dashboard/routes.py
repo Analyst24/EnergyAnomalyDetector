@@ -1,150 +1,112 @@
 """
-Dashboard routes for viewing and managing energy data.
+Dashboard routes for the Energy Anomaly Detection System.
 """
-from flask import render_template, flash, redirect, url_for, request, jsonify
+from flask import Blueprint, render_template, request
 from flask_login import login_required, current_user
-from app.dashboard import dashboard_bp
-from app.models import Dataset, AnalysisResult
+from app import db
+from app.models import Dataset, AnalysisResult, Anomaly
+from datetime import datetime, timedelta
+import pandas as pd
+import json
 
+# Create blueprint
+dashboard_bp = Blueprint('dashboard', __name__)
 
-@dashboard_bp.route('/')
+@dashboard_bp.route('/dashboard')
 @login_required
 def index():
-    """Main dashboard page with overview of user's data and analyses."""
-    # Get user's datasets
+    """Render the dashboard page."""
+    # Get query parameters for filtering
+    selected_dataset = request.args.get('dataset', type=int)
+    timeframe = request.args.get('timeframe', 'month')
+    algorithm = request.args.get('algorithm')
+    
+    # Get all user datasets for the dropdown
     datasets = Dataset.query.filter_by(user_id=current_user.id).all()
     
-    # Get user's recent analysis results
-    recent_analyses = AnalysisResult.query.filter_by(user_id=current_user.id) \
-                                         .order_by(AnalysisResult.created_at.desc()) \
-                                         .limit(5) \
-                                         .all()
+    # Base query for analysis results
+    query = AnalysisResult.query.filter_by(user_id=current_user.id)
     
-    # Statistics for dashboard widgets
-    stats = {
-        'dataset_count': Dataset.query.filter_by(user_id=current_user.id).count(),
-        'analysis_count': AnalysisResult.query.filter_by(user_id=current_user.id).count(),
-        'anomaly_count': sum(ar.anomaly_count for ar in 
-                            AnalysisResult.query.filter_by(user_id=current_user.id).all())
-    }
+    # Apply filters if provided
+    if selected_dataset:
+        query = query.filter_by(dataset_id=selected_dataset)
     
-    return render_template('dashboard/index.html',
-                          title='Dashboard',
-                          datasets=datasets,
-                          recent_analyses=recent_analyses,
-                          stats=stats)
-
-
-@dashboard_bp.route('/datasets')
-@login_required
-def datasets():
-    """Page listing all user datasets."""
-    user_datasets = Dataset.query.filter_by(user_id=current_user.id) \
-                                 .order_by(Dataset.created_at.desc()) \
-                                 .all()
+    if algorithm:
+        query = query.filter_by(algorithm=algorithm)
     
-    return render_template('dashboard/datasets.html',
-                          title='My Datasets',
-                          datasets=user_datasets)
-
-
-@dashboard_bp.route('/analyses')
-@login_required
-def analyses():
-    """Page listing all user analysis results."""
-    user_analyses = AnalysisResult.query.filter_by(user_id=current_user.id) \
-                                      .order_by(AnalysisResult.created_at.desc()) \
-                                      .all()
+    # Apply timeframe filter
+    if timeframe == 'day':
+        since = datetime.now() - timedelta(days=1)
+        query = query.filter(AnalysisResult.created_at >= since)
+    elif timeframe == 'week':
+        since = datetime.now() - timedelta(weeks=1)
+        query = query.filter(AnalysisResult.created_at >= since)
+    elif timeframe == 'month':
+        since = datetime.now() - timedelta(days=30)
+        query = query.filter(AnalysisResult.created_at >= since)
+    elif timeframe == 'year':
+        since = datetime.now() - timedelta(days=365)
+        query = query.filter(AnalysisResult.created_at >= since)
     
-    return render_template('dashboard/analyses.html',
-                          title='My Analyses',
-                          analyses=user_analyses)
-
-
-@dashboard_bp.route('/dataset/<int:dataset_id>')
-@login_required
-def view_dataset(dataset_id):
-    """View detailed information about a specific dataset."""
-    dataset = Dataset.query.get_or_404(dataset_id)
+    # Get analysis results
+    analysis_results = query.all()
     
-    # Ensure user owns this dataset
-    if dataset.user_id != current_user.id:
-        flash('You do not have permission to view this dataset.', 'danger')
-        return redirect(url_for('dashboard.datasets'))
+    # Calculate summary metrics
+    total_consumption = 0
+    anomaly_count = 0
+    time_period = "N/A"
     
-    # Get analyses for this dataset
-    analyses = AnalysisResult.query.filter_by(dataset_id=dataset_id) \
-                                  .order_by(AnalysisResult.created_at.desc()) \
-                                  .all()
-    
-    return render_template('dashboard/view_dataset.html',
-                          title=f'Dataset: {dataset.name}',
-                          dataset=dataset,
-                          analyses=analyses)
-
-
-@dashboard_bp.route('/analysis/<int:analysis_id>')
-@login_required
-def view_analysis(analysis_id):
-    """View detailed information about a specific analysis result."""
-    analysis = AnalysisResult.query.get_or_404(analysis_id)
-    
-    # Ensure user owns this analysis
-    if analysis.user_id != current_user.id:
-        flash('You do not have permission to view this analysis.', 'danger')
-        return redirect(url_for('dashboard.analyses'))
-    
-    # Get the anomalies for this analysis
-    anomalies = analysis.anomalies.all()
-    
-    return render_template('dashboard/view_analysis.html',
-                          title=f'Analysis: {analysis.name}',
-                          analysis=analysis,
-                          anomalies=anomalies)
-
-
-@dashboard_bp.route('/widget_data/<widget_type>')
-@login_required
-def widget_data(widget_type):
-    """API endpoint for dashboard widget data."""
-    if widget_type == 'recent_activity':
-        # Get latest datasets and analyses
-        datasets = Dataset.query.filter_by(user_id=current_user.id) \
-                               .order_by(Dataset.created_at.desc()) \
-                               .limit(3) \
-                               .all()
+    if analysis_results:
+        # Sum up anomalies
+        for result in analysis_results:
+            anomaly_count += result.anomaly_count
         
-        analyses = AnalysisResult.query.filter_by(user_id=current_user.id) \
-                                     .order_by(AnalysisResult.created_at.desc()) \
-                                     .limit(3) \
-                                     .all()
+        # Time period
+        if timeframe == 'day':
+            time_period = "Last 24 Hours"
+        elif timeframe == 'week':
+            time_period = "Last Week"
+        elif timeframe == 'month':
+            time_period = "Last 30 Days"
+        elif timeframe == 'year':
+            time_period = "Last Year"
+        else:
+            time_period = "All Time"
         
-        data = {
-            'datasets': [{'name': d.name, 'created_at': d.created_at.strftime('%Y-%m-%d %H:%M')} 
-                        for d in datasets],
-            'analyses': [{'name': a.name, 'created_at': a.created_at.strftime('%Y-%m-%d %H:%M')} 
-                        for a in analyses]
-        }
-        
-        return jsonify(data)
+        # Get total consumption from datasets if available
+        # This would require accessing the actual data files and summing consumption values
+        # For now, we'll use a placeholder
+        total_consumption = 15000.0  # Example value
     
-    elif widget_type == 'anomaly_summary':
-        # Get summary of anomalies by algorithm
-        results = AnalysisResult.query.filter_by(user_id=current_user.id).all()
-        
-        algorithm_counts = {}
-        for result in results:
-            if result.algorithm in algorithm_counts:
-                algorithm_counts[result.algorithm] += result.anomaly_count
-            else:
-                algorithm_counts[result.algorithm] = result.anomaly_count
-        
-        data = {
-            'labels': list(algorithm_counts.keys()),
-            'values': list(algorithm_counts.values())
-        }
-        
-        return jsonify(data)
+    # Calculate percentage if we have anomalies and total consumption
+    anomaly_percentage = 0.0
+    if anomaly_count > 0 and total_consumption > 0:
+        # This is a simplification - in a real system we would calculate what percentage of
+        # energy consumption is attributed to anomalies
+        anomaly_percentage = round((anomaly_count / 1000) * 100, 1)
     
-    # Default response for unknown widget type
-    return jsonify({'error': 'Unknown widget type'}), 400
+    # Get recent anomalies for the table
+    recent_anomalies = Anomaly.query.join(AnalysisResult).filter(
+        AnalysisResult.user_id == current_user.id
+    ).order_by(Anomaly.created_at.desc()).limit(10).all()
+    
+    # Prepare anomalies for display
+    for anomaly in recent_anomalies:
+        # Add the algorithm name and dataset name for display
+        anomaly.algorithm = anomaly.analysis_result.algorithm
+        anomaly.dataset_name = anomaly.analysis_result.dataset.name
+    
+    # Render the dashboard template with data
+    return render_template(
+        'dashboard/index.html',
+        active_page='dashboard',
+        datasets=datasets,
+        selected_dataset=selected_dataset,
+        timeframe=timeframe,
+        algorithm=algorithm,
+        total_consumption=total_consumption,
+        anomaly_count=anomaly_count,
+        anomaly_percentage=anomaly_percentage,
+        time_period=time_period,
+        recent_anomalies=recent_anomalies
+    )

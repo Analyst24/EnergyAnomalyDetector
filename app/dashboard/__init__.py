@@ -1,8 +1,4 @@
 """
-Dashboard blueprint for the main application dashboard.
+Dashboard module for the Energy Anomaly Detection System.
 """
-from flask import Blueprint
-
-dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
-
-from app.dashboard import routes
+from app.dashboard.routes import dashboard_bp
