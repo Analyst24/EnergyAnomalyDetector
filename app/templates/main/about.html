@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card bg-dark text-light border-secondary">
+            <div class="card-header bg-dark">
+                <h2 class="mb-0">About the Energy Anomaly Detection System</h2>
+            </div>
+            <div class="card-body">
+                <h4 class="card-subtitle mb-3">Overview</h4>
+                <p class="card-text">
+                    The Energy Anomaly Detection System is a comprehensive solution for identifying and analyzing 
+                    anomalies in energy consumption data. Designed to work completely offline, it provides
+                    professionals with powerful tools to detect inefficiencies, predict unusual consumption patterns,
+                    and make data-driven decisions to optimize energy usage.
+                </p>
+
+                <h4 class="card-subtitle mb-3 mt-4">Key Features</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-group list-group-flush bg-dark">
+                            <li class="list-group-item bg-dark text-light border-secondary">
+                                <i class="bi bi-check-circle-fill text-success"></i> 
+                                Advanced anomaly detection using multiple algorithms
+                            </li>
+                            <li class="list-group-item bg-dark text-light border-secondary">
+                                <i class="bi bi-check-circle-fill text-success"></i> 
+                                Interactive data visualization with Plotly
+                            </li>
+                            <li class="list-group-item bg-dark text-light border-secondary">
+                                <i class="bi bi-check-circle-fill text-success"></i> 
+                                Complete offline functionality with local database
+                            </li>
+                            <li class="list-group-item bg-dark text-light border-secondary">
+                                <i class="bi bi-check-circle-fill text-success"></i> 
+                                Secure user authentication system
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item bg-dark text-light border-secondary">
+                                <i class="bi bi-check-circle-fill text-success"></i> 
+                                Customizable detection parameters
+                            </li>
+                            <li class="list-group-item bg-dark text-light border-secondary">
+                                <i class="bi bi-check-circle-fill text-success"></i> 
+                                Code snippet library for custom analysis
+                            </li>
+                            <li class="list-group-item bg-dark text-light border-secondary">
+                                <i class="bi bi-check-circle-fill text-success"></i> 
+                                Exportable reports and findings
+                            </li>
+                            <li class="list-group-item bg-dark text-light border-secondary">
+                                <i class="bi bi-check-circle-fill text-success"></i> 
+                                Historical analysis of energy patterns
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h4 class="card-subtitle mb-3 mt-4">Technology Stack</h4>
+                <p class="card-text">
+                    This system is built using modern web technologies and machine learning libraries:
+                </p>
+                <div class="row">
+                    <div class="col-md-4">
+                        <h5 class="text-primary">Web Framework</h5>
+                        <ul class="list-unstyled">
+                            <li>Flask (Python web framework)</li>
+                            <li>Flask-Login (Authentication)</li>
+                            <li>Flask-SQLAlchemy (ORM)</li>
+                            <li>Flask-WTF (Forms)</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h5 class="text-primary">Data Science</h5>
+                        <ul class="list-unstyled">
+                            <li>Pandas & NumPy (Data manipulation)</li>
+                            <li>Scikit-learn (Machine learning)</li>
+                            <li>TensorFlow (Deep learning)</li>
+                            <li>Plotly (Visualization)</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h5 class="text-primary">Storage & UI</h5>
+                        <ul class="list-unstyled">
+                            <li>SQLite (Local database)</li>
+                            <li>Bootstrap 5 (Frontend)</li>
+                            <li>Plotly.js (Interactive charts)</li>
+                            <li>Prism.js (Code highlighting)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card bg-dark text-light border-secondary">
+            <div class="card-header bg-dark">
+                <h3 class="mb-0">How It Works</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-cloud-upload fs-1 text-primary"></i>
+                            <h5 class="mt-3">1. Upload Data</h5>
+                            <p class="small">Upload your energy consumption data in CSV or Excel format</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-gear fs-1 text-primary"></i>
+                            <h5 class="mt-3">2. Configure Detection</h5>
+                            <p class="small">Choose algorithms and customize detection parameters</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-search fs-1 text-primary"></i>
+                            <h5 class="mt-3">3. Run Analysis</h5>
+                            <p class="small">The system processes data and identifies anomalies</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-graph-up fs-1 text-primary"></i>
+                            <h5 class="mt-3">4. View Results</h5>
+                            <p class="small">Explore interactive visualizations and actionable insights</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

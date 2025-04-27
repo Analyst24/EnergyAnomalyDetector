@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card bg-dark text-light border-secondary">
+            <div class="card-body">
+                <h2 class="card-title">Welcome to the Energy Anomaly Detection System</h2>
+                <h5 class="card-subtitle mb-3 text-muted">Advanced energy consumption analysis and anomaly detection</h5>
+                <p class="card-text">
+                    This system helps you identify unusual patterns and anomalies in energy consumption data
+                    using state-of-the-art machine learning algorithms. Analyze your data, detect inefficiencies,
+                    and make data-driven decisions to optimize energy usage.
+                </p>
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('upload.index') }}" class="btn btn-primary btn-lg">
+                                <i class="bi bi-cloud-upload"></i> Upload New Data
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('dashboard.index') }}" class="btn btn-success btn-lg">
+                                <i class="bi bi-graph-up"></i> View Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card bg-dark h-100 text-light border-secondary">
+            <div class="card-body">
+                <h4 class="card-title"><i class="bi bi-lightbulb"></i> Anomaly Detection</h4>
+                <p class="card-text">
+                    Identify unusual patterns and outliers in your energy consumption data using 
+                    machine learning algorithms like Isolation Forest, DBSCAN, and Autoencoders.
+                </p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('detection.index') }}" class="btn btn-outline-primary">
+                        Run Detection
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card bg-dark h-100 text-light border-secondary">
+            <div class="card-body">
+                <h4 class="card-title"><i class="bi bi-graph-up"></i> Analysis</h4>
+                <p class="card-text">
+                    Gain deeper insights into your energy consumption patterns with 
+                    comprehensive data visualization and statistical analysis tools.
+                </p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('insights.index') }}" class="btn btn-outline-primary">
+                        View Insights
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card bg-dark h-100 text-light border-secondary">
+            <div class="card-body">
+                <h4 class="card-title"><i class="bi bi-code-slash"></i> Code Snippets</h4>
+                <p class="card-text">
+                    Access a library of code snippets to help you implement custom 
+                    anomaly detection algorithms and data processing workflows.
+                </p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('code_snippets.index') }}" class="btn btn-outline-primary">
+                        Browse Snippets
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card bg-dark text-light border-secondary">
+            <div class="card-header bg-dark">
+                <h4 class="mb-0"><i class="bi bi-speedometer2"></i> Quick Statistics</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <h2>{{ current_user.datasets.count() }}</h2>
+                        <p class="text-muted">Datasets</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h2>{{ current_user.detection_results.count() }}</h2>
+                        <p class="text-muted">Detection Results</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h2>{{ anomaly_count|default(0) }}</h2>
+                        <p class="text-muted">Anomalies Detected</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h2>{{ savings|default('0%') }}</h2>
+                        <p class="text-muted">Potential Savings</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
