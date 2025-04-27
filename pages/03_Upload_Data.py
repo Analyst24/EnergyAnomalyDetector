@@ -2,11 +2,16 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import io
+import os
 import plotly.express as px
 from streamlit_extras.colored_header import colored_header
 
 from utils.auth import is_authenticated
-from utils.data_processing import validate_dataset, preprocess_data
+from utils.data_processing import (
+    validate_dataset, preprocess_data, 
+    detect_csv_format, read_energy_csv, 
+    list_energy_csv_files, save_processed_data
+)
 from styles.custom import apply_custom_styles
 
 # Page configuration
@@ -156,6 +161,124 @@ def main():
         except Exception as e:
             st.error(f"Error processing the file: {str(e)}")
     
+    # Browse existing CSV files
+    st.markdown("---")
+    st.markdown("### Browse Existing Energy CSV Files")
+    st.markdown("""
+    Browse and load existing CSV files that contain energy consumption data.
+    The system will automatically detect timestamp and energy consumption columns.
+    """)
+    
+    # Specify the data directory
+    data_dir = "assets"
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir, exist_ok=True)
+    
+    # Scan for CSV files
+    csv_files = list_energy_csv_files(data_dir)
+    
+    if csv_files:
+        if 'error' in csv_files[0]:
+            st.error(f"Error scanning for CSV files: {csv_files[0]['error']}")
+        else:
+            # Create a dataframe for display
+            file_info = []
+            for file_data in csv_files:
+                if 'is_energy_data' in file_data:
+                    is_energy = "✅ Yes" if file_data['is_energy_data'] else "❌ No"
+                    size_kb = f"{float(file_data['size']) / 1024:.1f} KB"
+                    file_info.append({
+                        "Filename": file_data['filename'],
+                        "Size": size_kb,
+                        "Last Modified": file_data['last_modified'],
+                        "Energy Data": is_energy
+                    })
+            
+            if file_info:
+                file_df = pd.DataFrame(file_info)
+                st.dataframe(file_df, use_container_width=True)
+                
+                # File selection
+                energy_files = [f['filename'] for f in csv_files if f.get('is_energy_data', False)]
+                if energy_files:
+                    selected_file = st.selectbox("Select an energy data file to load:", 
+                                                options=energy_files)
+                    
+                    if st.button("Load Selected File"):
+                        selected_path = os.path.join(data_dir, selected_file)
+                        with st.spinner("Loading and processing file..."):
+                            # Get the format info
+                            format_info = detect_csv_format(selected_path)
+                            
+                            # Read the file with the detected format
+                            data, info = read_energy_csv(selected_path, format_info)
+                            
+                            if 'error' in info:
+                                st.error(f"Error loading file: {info['error']}")
+                            else:
+                                # Display format detection info
+                                st.success(f"File loaded successfully")
+                                
+                                col1, col2 = st.columns(2)
+                                with col1:
+                                    st.write("Detected format:")
+                                    format_msg = f"""
+                                    - Timestamp column: {info['timestamp_column']}
+                                    - Consumption column: {info['consumption_column']}
+                                    """
+                                    if info['temperature_column']:
+                                        format_msg += f"- Temperature column: {info['temperature_column']}\n"
+                                    if info['humidity_column']:
+                                        format_msg += f"- Humidity column: {info['humidity_column']}\n"
+                                    if info['occupancy_column']:
+                                        format_msg += f"- Occupancy column: {info['occupancy_column']}\n"
+                                    
+                                    st.markdown(format_msg)
+                                
+                                # Display raw data sample
+                                st.markdown("### Raw Data Preview")
+                                st.dataframe(data.head(10), use_container_width=True)
+                                
+                                # Process the data
+                                processed_data = preprocess_data(data)
+                                
+                                # Store in session state
+                                st.session_state.current_data = processed_data
+                                
+                                # Display processed data sample
+                                st.markdown("### Processed Data Preview")
+                                st.dataframe(processed_data.head(10), use_container_width=True)
+                                
+                                # Data visualization
+                                st.markdown("### Data Visualization")
+                                
+                                # Time series plot
+                                fig = px.line(
+                                    processed_data, 
+                                    x='timestamp', 
+                                    y='consumption',
+                                    title="Energy Consumption Over Time",
+                                    labels={"consumption": "Energy (kWh)", "timestamp": "Time"}
+                                )
+                                
+                                # Update layout for dark theme
+                                fig.update_layout(
+                                    plot_bgcolor='rgba(30, 39, 46, 0.8)',
+                                    paper_bgcolor='rgba(30, 39, 46, 0)',
+                                    font=dict(color='white'),
+                                    xaxis=dict(gridcolor='rgba(255, 255, 255, 0.1)'),
+                                    yaxis=dict(gridcolor='rgba(255, 255, 255, 0.1)'),
+                                    height=400
+                                )
+                                
+                                st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("No energy-related CSV files were found. You can upload new files above.")
+            else:
+                st.info("No CSV files found in the assets directory.")
+    else:
+        st.info("No CSV files found in the assets directory.")
+    
     # Sample data generation option
     st.markdown("---")
     st.markdown("### Generate Sample Data")
@@ -225,12 +348,32 @@ def main():
         
         # Create a download button for the sample data
         csv = sample_data.to_csv(index=False)
-        st.download_button(
-            label="Download Sample Data CSV",
-            data=csv,
-            file_name="sample_energy_data.csv",
-            mime="text/csv"
-        )
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.download_button(
+                label="Download Sample Data CSV",
+                data=csv,
+                file_name="sample_energy_data.csv",
+                mime="text/csv"
+            )
+        
+        with col2:
+            save_filename = st.text_input("Save as filename (in assets folder):", 
+                                         value="sample_energy_data.csv")
+            
+            if st.button("Save to Assets Folder"):
+                # Make sure assets directory exists
+                if not os.path.exists("assets"):
+                    os.makedirs("assets", exist_ok=True)
+                
+                # Save the file
+                save_path = os.path.join("assets", save_filename)
+                
+                if save_processed_data(sample_data, save_path):
+                    st.success(f"Data saved successfully to {save_path}")
+                else:
+                    st.error("Failed to save data to file")
     
     # Footer
     st.markdown("---")
