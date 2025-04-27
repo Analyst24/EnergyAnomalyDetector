@@ -367,37 +367,151 @@ def main():
     else:
         # Create sidebar
         with st.sidebar:
-            # Clean and simple sidebar with just welcome message and logout
-            st.markdown(f"### 👋 Welcome, {st.session_state.username}!")
+            # Professional sidebar with user info section
+            # User profile section
+            user_col1, user_col2 = st.columns([1, 3])
+            
+            with user_col1:
+                # User avatar/icon
+                st.markdown("""
+                <div style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg, #4b7bec 0%, #3867d6 100%);display:flex;align-items:center;justify-content:center;color:white;font-size:24px;font-weight:bold;">
+                    {}
+                </div>
+                """.format(st.session_state.username[0].upper()), unsafe_allow_html=True)
+                
+            with user_col2:
+                st.markdown(f"### {st.session_state.username}")
+                st.markdown("<span style='color:#a5b1c2;font-size:14px;'>Energy Analyst</span>", unsafe_allow_html=True)
+            
             st.markdown("---")
             
-            # Hide default sidebar nav and other UI elements
+            # Professional sidebar styling
             st.markdown("""
             <style>
+            /* Hide default elements */
             #MainMenu {visibility: hidden !important;}
             footer {visibility: hidden !important;}
             .stDeployButton {display: none !important;}
             
-            /* Ensure the default sidebar navigation is hidden */
+            /* Hide any default navigation including "init" */
             div[data-testid="stSidebarNav"] {
                 display: none !important;
                 visibility: hidden !important;
                 height: 0 !important;
                 position: absolute !important;
             }
+            
+            /* Professional menu styling */
+            .sidebar-menu {
+                margin-bottom: 20px;
+            }
+            
+            .menu-title {
+                font-size: 14px;
+                color: #a5b1c2;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 10px;
+                font-weight: 500;
+            }
+            
+            .menu-item {
+                display: flex;
+                align-items: center;
+                padding: 8px 12px;
+                margin: 4px 0;
+                border-radius: 5px;
+                color: #f0f0f0;
+                text-decoration: none;
+                transition: background-color 0.2s;
+                cursor: pointer;
+            }
+            
+            .menu-item:hover {
+                background-color: rgba(75, 123, 236, 0.2);
+            }
+            
+            .menu-item.active {
+                background-color: rgba(75, 123, 236, 0.3);
+                font-weight: 500;
+            }
+            
+            .menu-icon {
+                margin-right: 10px;
+                width: 20px;
+                text-align: center;
+                font-size: 18px;
+            }
+            
+            .logout-button {
+                margin-top: 30px;
+                text-align: center;
+            }
             </style>
             """, unsafe_allow_html=True)
             
-            # Add a little space for better layout
-            st.write("")
-            st.write("")
-            st.write("")
+            # Main navigation menu
+            st.markdown('<div class="sidebar-menu">', unsafe_allow_html=True)
+            st.markdown('<div class="menu-title">MAIN NAVIGATION</div>', unsafe_allow_html=True)
             
-            # Logout button with prominent style
+            # Navigation menu items
+            menu_items = [
+                {"name": "Dashboard", "icon": "📊", "url": "/pages/02_Dashboard.py"},
+                {"name": "Upload Data", "icon": "📤", "url": "/pages/03_Upload_Data.py"},
+                {"name": "Run Detection", "icon": "🔍", "url": "/pages/04_Run_Detection.py"}
+            ]
+            
+            for item in menu_items:
+                st.markdown(f"""
+                <a href="{item['url']}" target="_self" class="menu-item">
+                    <div class="menu-icon">{item['icon']}</div>
+                    <div>{item['name']}</div>
+                </a>
+                """, unsafe_allow_html=True)
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Analysis & Reports section
+            st.markdown('<div class="sidebar-menu">', unsafe_allow_html=True)
+            st.markdown('<div class="menu-title">ANALYSIS & REPORTS</div>', unsafe_allow_html=True)
+            
+            # Analysis menu items
+            analysis_items = [
+                {"name": "Results", "icon": "📈", "url": "/pages/05_Results.py"},
+                {"name": "Model Insights", "icon": "💡", "url": "/pages/06_Model_Insights.py"},
+                {"name": "Recommendations", "icon": "📋", "url": "/pages/07_Recommendations.py"}
+            ]
+            
+            for item in analysis_items:
+                st.markdown(f"""
+                <a href="{item['url']}" target="_self" class="menu-item">
+                    <div class="menu-icon">{item['icon']}</div>
+                    <div>{item['name']}</div>
+                </a>
+                """, unsafe_allow_html=True)
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # System section
+            st.markdown('<div class="sidebar-menu">', unsafe_allow_html=True)
+            st.markdown('<div class="menu-title">SYSTEM</div>', unsafe_allow_html=True)
+            
+            # System menu items
+            st.markdown(f"""
+            <a href="/pages/08_Settings.py" target="_self" class="menu-item">
+                <div class="menu-icon">⚙️</div>
+                <div>Settings</div>
+            </a>
+            """, unsafe_allow_html=True)
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Logout button (using Streamlit's button for functionality)
+            st.markdown('<div class="logout-button">', unsafe_allow_html=True)
             if st.button("📤 Logout", use_container_width=True):
-                # Use the logout_user function from auth.py
                 logout_user()
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
                 
             # Force hide the default sidebar nav via JavaScript
             js_code = """
