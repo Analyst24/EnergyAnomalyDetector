@@ -10,6 +10,37 @@ import plotly.express as px
 import plotly.graph_objects as go
 from streamlit_extras.colored_header import colored_header
 import streamlit.components.v1
+from streamlit.runtime.scriptrunner import add_script_run_ctx
+try:
+    # For Streamlit >= 1.18.0
+    from streamlit.runtime.scriptrunner import get_script_run_ctx
+    def switch_page(page_name):
+        from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx
+        from streamlit.source_util import get_pages
+        
+        current_page = None
+        ctx = get_script_run_ctx()
+        if ctx:
+            current_page = ctx.page_script_hash
+        
+        pages = get_pages("streamlit_app.py")
+        
+        for page_hash, page_info in pages.items():
+            if page_info["page_name"] == page_name:
+                st.session_state["STREAMLIT_REDIRECT"] = {"page_hash": page_hash, "page_name": page_name}
+                st.rerun()
+                break
+except ImportError:
+    # For Streamlit < 1.18.0
+    def switch_page(page_name):
+        from streamlit.runtime import Runtime
+        runtime = Runtime.instance()
+        root_script_run_ctx = runtime._active_script_run_ctx
+        if root_script_run_ctx is None:
+            raise RuntimeError("No script is currently running")
+        
+        st.session_state["STREAMLIT_REDIRECT"] = page_name
+        st.rerun()
 
 # Ensure path is set correctly for imports to work in any environment
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -454,20 +485,22 @@ def main():
             st.markdown('<div class="sidebar-menu">', unsafe_allow_html=True)
             st.markdown('<div class="menu-title">MAIN NAVIGATION</div>', unsafe_allow_html=True)
             
-            # Navigation menu items with correct Streamlit URLs
+            # Create direct Streamlit buttons for navigation
             menu_items = [
-                {"name": "Dashboard", "icon": "📊", "url": "02_Dashboard"},
-                {"name": "Upload Data", "icon": "📤", "url": "03_Upload_Data"},
-                {"name": "Run Detection", "icon": "🔍", "url": "04_Run_Detection"}
+                {"name": "Dashboard", "icon": "📊", "page": "02_Dashboard"},
+                {"name": "Upload Data", "icon": "📤", "page": "03_Upload_Data"},
+                {"name": "Run Detection", "icon": "🔍", "page": "04_Run_Detection"}
             ]
             
+            # Function to navigate to a different page
+            def navigate_to(page):
+                st.session_state["current_page"] = page
+                st.rerun()
+            
             for item in menu_items:
-                st.markdown(f"""
-                <a href="{item['url']}" target="_self" class="menu-item">
-                    <div class="menu-icon">{item['icon']}</div>
-                    <div>{item['name']}</div>
-                </a>
-                """, unsafe_allow_html=True)
+                if st.button(f"{item['icon']} {item['name']}", key=f"nav_{item['page']}", use_container_width=True):
+                    # Set the page to navigate to and rerun
+                    navigate_to(item['page'])
             
             st.markdown('</div>', unsafe_allow_html=True)
             
@@ -475,20 +508,17 @@ def main():
             st.markdown('<div class="sidebar-menu">', unsafe_allow_html=True)
             st.markdown('<div class="menu-title">ANALYSIS & REPORTS</div>', unsafe_allow_html=True)
             
-            # Analysis menu items with correct Streamlit URLs
+            # Analysis menu items using native Streamlit buttons
             analysis_items = [
-                {"name": "Results", "icon": "📈", "url": "05_Results"},
-                {"name": "Model Insights", "icon": "💡", "url": "06_Model_Insights"},
-                {"name": "Recommendations", "icon": "📋", "url": "07_Recommendations"}
+                {"name": "Results", "icon": "📈", "page": "05_Results"},
+                {"name": "Model Insights", "icon": "💡", "page": "06_Model_Insights"},
+                {"name": "Recommendations", "icon": "📋", "page": "07_Recommendations"}
             ]
             
             for item in analysis_items:
-                st.markdown(f"""
-                <a href="{item['url']}" target="_self" class="menu-item">
-                    <div class="menu-icon">{item['icon']}</div>
-                    <div>{item['name']}</div>
-                </a>
-                """, unsafe_allow_html=True)
+                if st.button(f"{item['icon']} {item['name']}", key=f"nav_{item['page']}", use_container_width=True):
+                    # Use the same navigation function
+                    navigate_to(item['page'])
             
             st.markdown('</div>', unsafe_allow_html=True)
             
@@ -496,13 +526,9 @@ def main():
             st.markdown('<div class="sidebar-menu">', unsafe_allow_html=True)
             st.markdown('<div class="menu-title">SYSTEM</div>', unsafe_allow_html=True)
             
-            # System menu items with correct Streamlit URL
-            st.markdown(f"""
-            <a href="08_Settings" target="_self" class="menu-item">
-                <div class="menu-icon">⚙️</div>
-                <div>Settings</div>
-            </a>
-            """, unsafe_allow_html=True)
+            # System menu items using the same navigation function
+            if st.button("⚙️ Settings", key="nav_settings", use_container_width=True):
+                navigate_to("08_Settings")
             
             st.markdown('</div>', unsafe_allow_html=True)
             
