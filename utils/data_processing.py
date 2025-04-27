@@ -3,7 +3,11 @@ Data processing utilities for the Energy Anomaly Detection System.
 """
 import pandas as pd
 import numpy as np
+import os
+import io
+import csv
 from datetime import datetime
+from typing import List, Tuple, Dict, Optional, Union, Any
 
 def validate_dataset(data):
     """
@@ -190,3 +194,232 @@ def prepare_features(data, feature_columns=None):
     X = data[feature_columns].values
     
     return X
+
+def detect_csv_format(file_path: str) -> Dict[str, Any]:
+    """
+    Detect the format of an energy-related CSV file.
+    
+    Parameters:
+        file_path (str): Path to the CSV file
+        
+    Returns:
+        dict: Dictionary containing format information
+    """
+    try:
+        # Read first few lines to detect format
+        with open(file_path, 'r', encoding='utf-8') as f:
+            sample_lines = [f.readline() for _ in range(10)]
+        
+        # Detect delimiter
+        sniffer = csv.Sniffer()
+        dialect = sniffer.sniff(''.join(sample_lines))
+        delimiter = dialect.delimiter
+        
+        # Try to read the file with pandas to detect columns
+        df_sample = pd.read_csv(file_path, nrows=5, delimiter=delimiter)
+        
+        # Analyze columns
+        columns = df_sample.columns.tolist()
+        
+        # Detect timestamp column
+        timestamp_col = None
+        for col in columns:
+            # Look for common timestamp column names
+            if col.lower() in ['timestamp', 'time', 'date', 'datetime', 'time_stamp']:
+                timestamp_col = col
+                break
+        
+        # If no obvious timestamp column, try to detect based on content
+        if timestamp_col is None:
+            for col in columns:
+                # Try to convert to datetime
+                try:
+                    pd.to_datetime(df_sample[col])
+                    timestamp_col = col
+                    break
+                except:
+                    continue
+        
+        # Detect energy consumption column
+        consumption_col = None
+        for col in columns:
+            # Look for common energy consumption column names
+            if any(keyword in col.lower() for keyword in ['consumption', 'energy', 'power', 'kwh', 'kw', 'usage']):
+                consumption_col = col
+                break
+        
+        # If no obvious consumption column, look for numeric columns that aren't timestamps
+        if consumption_col is None:
+            for col in columns:
+                if col != timestamp_col and pd.api.types.is_numeric_dtype(df_sample[col]):
+                    consumption_col = col
+                    break
+        
+        # Detect other relevant columns
+        temperature_col = next((col for col in columns if any(keyword in col.lower() 
+                               for keyword in ['temperature', 'temp', 'celsius', 'fahrenheit'])), None)
+        
+        humidity_col = next((col for col in columns if any(keyword in col.lower() 
+                            for keyword in ['humidity', 'rh', 'moisture'])), None)
+        
+        occupancy_col = next((col for col in columns if any(keyword in col.lower() 
+                             for keyword in ['occupancy', 'occupied', 'presence', 'people'])), None)
+        
+        return {
+            'delimiter': delimiter,
+            'columns': columns,
+            'timestamp_column': timestamp_col,
+            'consumption_column': consumption_col,
+            'temperature_column': temperature_col,
+            'humidity_column': humidity_col,
+            'occupancy_column': occupancy_col,
+            'has_header': True  # Assuming all CSV files have headers
+        }
+    
+    except Exception as e:
+        return {
+            'error': str(e),
+            'delimiter': ',',
+            'columns': [],
+            'timestamp_column': None,
+            'consumption_column': None,
+            'temperature_column': None,
+            'humidity_column': None,
+            'occupancy_column': None,
+            'has_header': True
+        }
+
+def read_energy_csv(file_path: str, format_info: Optional[Dict[str, Any]] = None) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    """
+    Read an energy-related CSV file and convert it to a standardized format.
+    
+    Parameters:
+        file_path (str): Path to the CSV file
+        format_info (dict, optional): Format information from detect_csv_format
+        
+    Returns:
+        tuple: (DataFrame with standardized columns, Format information dictionary)
+    """
+    try:
+        # If format info wasn't provided, detect it
+        if format_info is None:
+            format_info = detect_csv_format(file_path)
+            
+        # If an error occurred during format detection
+        if 'error' in format_info and not format_info['columns']:
+            raise ValueError(f"Failed to detect CSV format: {format_info['error']}")
+            
+        # Read the CSV file
+        df = pd.read_csv(file_path, delimiter=format_info['delimiter'])
+        
+        # Create a standardized DataFrame
+        standardized_df = pd.DataFrame()
+        
+        # Process timestamp column
+        if format_info['timestamp_column']:
+            try:
+                standardized_df['timestamp'] = pd.to_datetime(df[format_info['timestamp_column']])
+            except Exception as e:
+                raise ValueError(f"Failed to convert timestamp column: {str(e)}")
+        else:
+            # If no timestamp column, create an index-based one
+            standardized_df['timestamp'] = pd.date_range(
+                start=datetime.now().replace(hour=0, minute=0, second=0, microsecond=0),
+                periods=len(df),
+                freq='H'
+            )
+            format_info['timestamp_column'] = 'Generated timestamp'
+            
+        # Process consumption column
+        if format_info['consumption_column']:
+            try:
+                standardized_df['consumption'] = pd.to_numeric(df[format_info['consumption_column']])
+            except Exception as e:
+                raise ValueError(f"Failed to convert consumption column: {str(e)}")
+        else:
+            raise ValueError("No energy consumption column detected in the file")
+            
+        # Process optional columns
+        if format_info['temperature_column']:
+            standardized_df['temperature'] = pd.to_numeric(df[format_info['temperature_column']], errors='coerce')
+            
+        if format_info['humidity_column']:
+            standardized_df['humidity'] = pd.to_numeric(df[format_info['humidity_column']], errors='coerce')
+            
+        if format_info['occupancy_column']:
+            standardized_df['occupancy'] = pd.to_numeric(df[format_info['occupancy_column']], errors='coerce')
+            
+        return standardized_df, format_info
+        
+    except Exception as e:
+        # Return an empty DataFrame and the error
+        empty_df = pd.DataFrame(columns=['timestamp', 'consumption'])
+        return empty_df, {'error': str(e)}
+
+def list_energy_csv_files(directory: str) -> List[Dict[str, str]]:
+    """
+    List all CSV files in a directory that might contain energy-related data.
+    
+    Parameters:
+        directory (str): Directory path to search
+        
+    Returns:
+        list: List of dictionaries with file information
+    """
+    result = []
+    
+    try:
+        for filename in os.listdir(directory):
+            if filename.lower().endswith('.csv'):
+                file_path = os.path.join(directory, filename)
+                
+                # Get basic file info
+                file_info = {
+                    'filename': filename,
+                    'path': file_path,
+                    'size': os.path.getsize(file_path),
+                    'last_modified': datetime.fromtimestamp(os.path.getmtime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
+                }
+                
+                # Try to detect if it's an energy-related CSV
+                try:
+                    format_info = detect_csv_format(file_path)
+                    
+                    # If we found consumption and timestamp columns, it's likely energy data
+                    if format_info['consumption_column'] and format_info['timestamp_column']:
+                        file_info['is_energy_data'] = True
+                        file_info['format_info'] = format_info
+                    else:
+                        file_info['is_energy_data'] = False
+                        
+                except Exception:
+                    file_info['is_energy_data'] = False
+                
+                result.append(file_info)
+    
+    except Exception as e:
+        # Return with error information
+        return [{'error': str(e)}]
+    
+    return result
+
+def save_processed_data(data: pd.DataFrame, file_path: str) -> bool:
+    """
+    Save processed data to a CSV file.
+    
+    Parameters:
+        data (DataFrame): The data to save
+        file_path (str): Path where to save the file
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        
+        # Save the data
+        data.to_csv(file_path, index=False)
+        return True
+    except Exception:
+        return False

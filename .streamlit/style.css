@@ -1,0 +1,61 @@
+/* Hide the 'init' sidebar item */
+span[data-testid="stSidebarNavItems"] > div:first-child {
+    display: none !important;
+}
+
+/* Hide the deploy and main menu buttons */
+button[title="Deploy"] {
+    display: none !important;
+}
+
+button[kind="header"] {
+    display: none !important;
+}
+
+/* Custom styling for the application */
+.main-header {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #4b7bec;
+}
+
+.section-header {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #a5b1c2;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #3d4852;
+    padding-bottom: 0.5rem;
+}
+
+.info-box {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: rgba(46, 204, 113, 0.1);
+    border-left: 4px solid #2ecc71;
+}
+
+.warning-box {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: rgba(241, 196, 15, 0.1);
+    border-left: 4px solid #f1c40f;
+}
+
+.error-box {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: rgba(231, 76, 60, 0.1);
+    border-left: 4px solid #e74c3c;
+}
+
+/* Custom chart styling */
+div[data-testid="stDecoration"] {
+    background-image: none;
+    background-color: transparent !important;
+}
+
+.stPlotlyChart > div {
+    border-radius: 0.5rem;
+}

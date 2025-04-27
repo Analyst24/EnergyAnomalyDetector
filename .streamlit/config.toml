@@ -5,12 +5,7 @@ port = 5000
 
 [theme]
 base = "dark"
-primaryColor = "#3498DB"
-backgroundColor = "#1E2730"
-secondaryBackgroundColor = "#2C3E50"
-textColor = "#FFFFFF"
-font = "sans serif"
-
-[browser]
-serverAddress = "localhost"
-gatherUsageStats = false
+primaryColor = "#4b7bec"
+backgroundColor = "#1e272e"
+secondaryBackgroundColor = "#2d3436"
+textColor = "#ffffff"

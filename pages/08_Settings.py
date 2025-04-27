@@ -104,11 +104,11 @@ def main():
         
         if users:
             user_list = []
-            for username, user_data in users.items():
+            for user in users:
                 user_list.append({
-                    "Username": username,
-                    "Name": user_data.get("name", ""),
-                    "Role": user_data.get("role", "User")
+                    "Username": user.get("username", ""),
+                    "Name": user.get("full_name", ""),
+                    "Role": user.get("role", "User")
                 })
             
             user_df = pd.DataFrame(user_list)
@@ -130,7 +130,7 @@ def main():
             if submit_button:
                 if not new_username or not new_password:
                     st.error("Username and password are required")
-                elif new_username in users:
+                elif any(user.get("username") == new_username for user in users):
                     st.error(f"User '{new_username}' already exists")
                 else:
                     # Add the new user
