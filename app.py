@@ -144,7 +144,50 @@ if not st.session_state.db_initialized:
         st.error(f"Error initializing database: {e}")
         st.session_state.db_initialized = False
 
-# Function to convert image to base64 (used for embedded images in the app)
+# Function to display a background image
+def add_bg_image():
+    # Create a dark gradient background instead of loading an image
+    bg_style = """
+    <style>
+    .stApp {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        background-size: cover;
+        background-position: center;
+    }
+    .auth-container {
+        background-color: rgba(45, 52, 54, 0.85);
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        max-width: 450px;
+        margin: 10vh auto;
+    }
+    .auth-header {
+        color: white;
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    .auth-button {
+        width: 100%;
+        margin-top: 15px;
+    }
+    .auth-link {
+        text-align: center;
+        margin-top: 20px;
+        color: #4b7bec;
+        cursor: pointer;
+    }
+    .auth-link:hover {
+        text-decoration: underline;
+    }
+    .stButton button {
+        width: 100%;
+    }
+    </style>
+    """
+    st.markdown(bg_style, unsafe_allow_html=True)
+
+# Function to convert image to base64
 def image_to_base64(image):
     import io
     import base64
@@ -154,154 +197,25 @@ def image_to_base64(image):
 
 # Login page
 def login_page():
-    """Render the login page with energy-related background"""
     # Hide the sidebar completely
     st.markdown("""
     <style>
     [data-testid="collapsedControl"] {display: none}
     section[data-testid="stSidebar"] {display: none}
     .stApp header {display: none}
-    
-    /* Static energy background styles */
-    .stApp {
-        background-color: #0a2446 !important;
-        background-image: linear-gradient(135deg, #0a2446 0%, #103a6c 100%) !important;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    /* Background with energy grid pattern */
-    .energy-grid-bg {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        background-image: 
-            linear-gradient(rgba(14, 118, 168, 0.07) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(14, 118, 168, 0.07) 1px, transparent 1px);
-        background-size: 20px 20px;
-    }
-    
-    /* Professional login form styling */
-    .auth-container {
-        background-color: rgba(15, 30, 57, 0.85);
-        border-radius: 10px;
-        padding: 30px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-        max-width: 450px;
-        margin: 12vh auto;
-        border: 1px solid rgba(72, 126, 176, 0.2);
-        backdrop-filter: blur(5px);
-    }
-    
-    .app-logo {
-        text-align: center;
-        margin-bottom: 20px;
-    }
-    
-    .app-logo img {
-        max-width: 120px;
-        margin-bottom: 10px;
-    }
-    
-    .auth-header {
-        color: white;
-        text-align: center;
-        margin-bottom: 30px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-    
-    .auth-link {
-        text-align: center;
-        margin-top: 20px;
-        color: #5ca1e1;
-        cursor: pointer;
-    }
-    
-    .auth-link:hover {
-        text-decoration: underline;
-        color: #3498db;
-    }
-    
-    .login-title {
-        color: white;
-        text-align: center;
-        margin-bottom: 15px;
-    }
-    
-    /* Input field styling */
-    .stTextInput label, .stTextInput label p, .stPasswordInput label {
-        color: #e0e0e0 !important;
-        font-weight: 500 !important;
-    }
-    
-    .stTextInput input, .stPasswordInput input {
-        background-color: rgba(255, 255, 255, 0.1) !important;
-        color: white !important;
-        border: 1px solid rgba(72, 126, 176, 0.3) !important;
-        border-radius: 5px !important;
-        padding: 10px 12px !important;
-    }
-    
-    .stTextInput input:focus, .stPasswordInput input:focus {
-        border: 1px solid rgba(72, 126, 176, 0.8) !important;
-        box-shadow: 0 0 0 1px rgba(72, 126, 176, 0.3) !important;
-    }
-    
-    /* Login button styling */
-    .stButton button {
-        background-color: #3498db !important;
-        color: white !important;
-        border: none !important;
-        padding: 12px !important;
-        font-weight: 500 !important;
-        width: 100%;
-        border-radius: 5px !important;
-        margin-top: 10px !important;
-        transition: background-color 0.3s !important;
-    }
-    
-    .stButton button:hover {
-        background-color: #2980b9 !important;
-    }
-    
-    /* Energy icon styling */
-    .energy-icon {
-        font-size: 48px;
-        margin-bottom: 10px;
-        text-align: center;
-        color: #3498db;
-    }
-    
-    /* Form field spacing */
-    .form-spacer {
-        margin-bottom: 15px;
-    }
     </style>
-    
-    <!-- Energy grid background -->
-    <div class="energy-grid-bg"></div>
     """, unsafe_allow_html=True)
     
-    # Add login form container
+    # Add background
+    add_bg_image()
+    
+    # Add container for login form
     st.markdown('<div class="auth-container">', unsafe_allow_html=True)
+    st.markdown('<h1 class="auth-header">⚡ Energy Anomaly Detection</h1>', unsafe_allow_html=True)
     
-    # Energy logo/icon
-    st.markdown('<div class="energy-icon">⚡</div>', unsafe_allow_html=True)
-    st.markdown('<h1 class="login-title">Energy Anomaly Detection</h1>', unsafe_allow_html=True)
-    st.markdown('<h3 class="login-title" style="font-size: 1.2rem; opacity: 0.9;">Professional Login</h3>', unsafe_allow_html=True)
+    email = st.text_input("Email", key="login_email")
+    password = st.text_input("Password", type="password", key="login_password")
     
-    # Add some space
-    st.markdown('<div class="form-spacer"></div>', unsafe_allow_html=True)
-    
-    # Login form
-    email = st.text_input("Email", key="login_email", placeholder="Enter your email")
-    password = st.text_input("Password", type="password", key="login_password", placeholder="Enter your password")
-    
-    # Login button
     login_btn = st.button("Login", key="login_button")
     
     if login_btn:
@@ -313,7 +227,7 @@ def login_page():
         else:
             st.error("Invalid email or password. Please try again or sign up for a new account.")
     
-    # Sign up link
+    # Link to sign up page
     st.markdown('<div class="auth-link" id="signup-link">Don\'t have an account? Sign up</div>', unsafe_allow_html=True)
     
     # JavaScript to handle the sign up link click
@@ -327,7 +241,7 @@ def login_page():
     </script>
     """, unsafe_allow_html=True)
     
-    # Hidden button for signup navigation
+    # Check if signup link was clicked
     if st.button("Sign Up", key="goto_signup", help="Create a new account"):
         st.session_state.show_signup = True
         st.rerun()
@@ -421,158 +335,30 @@ def get_started_page():
 
 # Sign up page
 def signup_page():
-    """Render the signup page with matching energy-related background"""
+    """Render the signup page"""
     # Hide the sidebar completely
     st.markdown("""
     <style>
     [data-testid="collapsedControl"] {display: none}
     section[data-testid="stSidebar"] {display: none}
     .stApp header {display: none}
-    
-    /* Static energy background styles */
-    .stApp {
-        background-color: #0a2446 !important;
-        background-image: linear-gradient(135deg, #0a2446 0%, #103a6c 100%) !important;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    /* Background with energy grid pattern */
-    .energy-grid-bg {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        background-image: 
-            linear-gradient(rgba(14, 118, 168, 0.07) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(14, 118, 168, 0.07) 1px, transparent 1px);
-        background-size: 20px 20px;
-    }
-    
-    /* Professional signup form styling */
-    .auth-container {
-        background-color: rgba(15, 30, 57, 0.85);
-        border-radius: 10px;
-        padding: 30px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-        max-width: 450px;
-        margin: 5vh auto;
-        border: 1px solid rgba(72, 126, 176, 0.2);
-        backdrop-filter: blur(5px);
-    }
-    
-    .app-logo {
-        text-align: center;
-        margin-bottom: 20px;
-    }
-    
-    .app-logo img {
-        max-width: 120px;
-        margin-bottom: 10px;
-    }
-    
-    .auth-header {
-        color: white;
-        text-align: center;
-        margin-bottom: 30px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-    
-    .auth-link {
-        text-align: center;
-        margin-top: 20px;
-        color: #5ca1e1;
-        cursor: pointer;
-    }
-    
-    .auth-link:hover {
-        text-decoration: underline;
-        color: #3498db;
-    }
-    
-    .signup-title {
-        color: white;
-        text-align: center;
-        margin-bottom: 15px;
-    }
-    
-    /* Input field styling */
-    .stTextInput label, .stTextInput label p, .stPasswordInput label {
-        color: #e0e0e0 !important;
-        font-weight: 500 !important;
-    }
-    
-    .stTextInput input, .stPasswordInput input {
-        background-color: rgba(255, 255, 255, 0.1) !important;
-        color: white !important;
-        border: 1px solid rgba(72, 126, 176, 0.3) !important;
-        border-radius: 5px !important;
-        padding: 10px 12px !important;
-    }
-    
-    .stTextInput input:focus, .stPasswordInput input:focus {
-        border: 1px solid rgba(72, 126, 176, 0.8) !important;
-        box-shadow: 0 0 0 1px rgba(72, 126, 176, 0.3) !important;
-    }
-    
-    /* Button styling */
-    .stButton button {
-        background-color: #3498db !important;
-        color: white !important;
-        border: none !important;
-        padding: 12px !important;
-        font-weight: 500 !important;
-        width: 100%;
-        border-radius: 5px !important;
-        margin-top: 10px !important;
-        transition: background-color 0.3s !important;
-    }
-    
-    .stButton button:hover {
-        background-color: #2980b9 !important;
-    }
-    
-    /* Energy icon styling */
-    .energy-icon {
-        font-size: 48px;
-        margin-bottom: 10px;
-        text-align: center;
-        color: #3498db;
-    }
-    
-    /* Form field spacing */
-    .form-spacer {
-        margin-bottom: 15px;
-    }
     </style>
-    
-    <!-- Energy grid background -->
-    <div class="energy-grid-bg"></div>
     """, unsafe_allow_html=True)
     
-    # Add signup form container
+    # Add background
+    add_bg_image()
+    
+    # Add container for signup form
     st.markdown('<div class="auth-container">', unsafe_allow_html=True)
+    st.markdown('<h1 class="auth-header">⚡ Create Account</h1>', unsafe_allow_html=True)
     
-    # Energy logo/icon
-    st.markdown('<div class="energy-icon">⚡</div>', unsafe_allow_html=True)
-    st.markdown('<h1 class="signup-title">Create Account</h1>', unsafe_allow_html=True)
-    st.markdown('<h3 class="signup-title" style="font-size: 1.1rem; opacity: 0.9;">Energy Anomaly Detection System</h3>', unsafe_allow_html=True)
+    full_name = st.text_input("Full Name", key="signup_name")
+    email = st.text_input("Email", key="signup_email")
+    username = st.text_input("Username", key="signup_username")
+    password = st.text_input("Password", type="password", key="signup_password")
+    confirm_password = st.text_input("Confirm Password", type="password", key="signup_confirm_password")
     
-    # Add some space
-    st.markdown('<div class="form-spacer"></div>', unsafe_allow_html=True)
-    
-    # Form fields with placeholders
-    full_name = st.text_input("Full Name", key="signup_name", placeholder="Enter your full name")
-    email = st.text_input("Email", key="signup_email", placeholder="Enter your email address")
-    username = st.text_input("Username", key="signup_username", placeholder="Choose a username")
-    password = st.text_input("Password", type="password", key="signup_password", placeholder="Create a password")
-    confirm_password = st.text_input("Confirm Password", type="password", key="signup_confirm_password", placeholder="Confirm your password")
-    
-    # Create account button
-    signup_btn = st.button("Create Account", key="signup_button")
+    signup_btn = st.button("Sign Up", key="signup_button")
     
     if signup_btn:
         # Validate form
