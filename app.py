@@ -9,7 +9,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 from streamlit_extras.colored_header import colored_header
 
-from utils.auth import login_user, create_user, verify_password, get_users, is_authenticated, add_user
+from utils.auth import (
+    login_user, create_user, verify_password, get_users, 
+    is_authenticated, add_user, logout_user, get_user_role,
+    get_current_user, get_user_id
+)
 from styles.custom import apply_custom_styles
 
 # Page configuration
@@ -38,8 +42,10 @@ if 'model_metrics' not in st.session_state:
     st.session_state.model_metrics = None
 if 'show_signup' not in st.session_state:
     st.session_state.show_signup = False
+if 'db_initialized' not in st.session_state:
+    st.session_state.db_initialized = False
 
-# Create a sample users dictionary if it doesn't exist
+# Create a sample users dictionary if it doesn't exist (for backwards compatibility)
 if 'users' not in st.session_state:
     st.session_state.users = {
         'admin': {
@@ -53,6 +59,28 @@ if 'users' not in st.session_state:
             'email': 'demo@example.com'
         }
     }
+
+# Initialize database if not already done
+if not st.session_state.db_initialized:
+    try:
+        from database.connection import test_connection
+        from init_database import initialize_database, migrate_session_users
+        
+        # Test database connection
+        if test_connection():
+            # Initialize database tables and default data
+            initialize_database()
+            
+            # Migrate users from session state to database
+            migrate_session_users()
+            
+            st.session_state.db_initialized = True
+    except ImportError:
+        st.warning("Database modules not available, running in session-only mode")
+        st.session_state.db_initialized = False
+    except Exception as e:
+        st.error(f"Error initializing database: {e}")
+        st.session_state.db_initialized = False
 
 # Function to display a background image
 def add_bg_image():
@@ -132,23 +160,13 @@ def login_page():
     login_btn = st.button("Login", key="login_button")
     
     if login_btn:
-        # Find the user with matching email
-        user_found = False
-        for username, user_data in st.session_state.users.items():
-            if 'email' in user_data and user_data['email'] == email:
-                if user_data['password'] == password:
-                    st.session_state.authenticated = True
-                    st.session_state.username = username
-                    st.success(f"Welcome back, {user_data.get('name', username)}!")
-                    time.sleep(1)
-                    st.rerun()
-                else:
-                    st.error("Invalid password")
-                user_found = True
-                break
-        
-        if not user_found:
-            st.error("Email not found. Please sign up if you don't have an account.")
+        # Attempt to log in user with email and password
+        if login_user(email, password):
+            st.success(f"Welcome back, {st.session_state.username}!")
+            time.sleep(1)
+            st.rerun()
+        else:
+            st.error("Invalid email or password. Please try again or sign up for a new account.")
     
     # Link to sign up page
     st.markdown('<div class="auth-link" id="signup-link">Don\'t have an account? Sign up</div>', unsafe_allow_html=True)
@@ -288,20 +306,18 @@ def signup_page():
             st.error("All fields are required.")
         elif password != confirm_password:
             st.error("Passwords do not match.")
-        elif username in st.session_state.users:
-            st.error("Username already exists. Please choose another one.")
-        elif any(user_data.get('email') == email for user_data in st.session_state.users.values()):
-            st.error("Email already registered. Please use another email or login.")
         else:
-            # Add the new user
-            add_user(username, password, full_name, role="User")
-            # Add email to user data
-            st.session_state.users[username]['email'] = email
-            
-            st.success("Account created successfully! You can now log in.")
-            st.session_state.show_signup = False
-            time.sleep(1)
-            st.rerun()
+            # Create the new user with database support
+            try:
+                if create_user(username, password, full_name, role="User", email=email):
+                    st.success("Account created successfully! You can now log in.")
+                    st.session_state.show_signup = False
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("Username or email already exists. Please choose different ones.")
+            except Exception as e:
+                st.error(f"Error creating account: {str(e)}")
     
     # Link to login page
     st.markdown('<div class="auth-link" id="login-link">Already have an account? Log In</div>', unsafe_allow_html=True)
@@ -327,8 +343,8 @@ def main():
             st.markdown("---")
             
             if st.button("Logout"):
-                st.session_state.authenticated = False
-                st.session_state.username = ""
+                # Use the logout_user function from auth.py
+                logout_user()
                 st.rerun()
         
         # Main content
