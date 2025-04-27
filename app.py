@@ -397,62 +397,16 @@ def main():
             login_page()
     else:
         # Create sidebar
+        # Basic sidebar
         with st.sidebar:
-            # Hide default Streamlit navigation
-            st.markdown("""
-            <style>
-            /* Hide default elements */
-            #MainMenu {visibility: hidden !important;}
-            footer {visibility: hidden !important;}
-            .stDeployButton {display: none !important;}
-            
-            /* Hide any default navigation including "init" */
-            div[data-testid="stSidebarNav"] {
-                display: none !important;
-                visibility: hidden !important;
-                height: 0 !important;
-                position: absolute !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-            
-            # Simple user profile with avatar
-            user_col1, user_col2 = st.columns([1, 3])
-            with user_col1:
-                st.markdown(f"""
-                <div style="
-                    width: 50px;
-                    height: 50px;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, #4b7bec 0%, #3867d6 100%);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-size: 24px;
-                    font-weight: bold;
-                    margin-bottom: 10px;
-                ">
-                    {st.session_state.username[0].upper()}
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with user_col2:
-                st.markdown(f"### {st.session_state.username}")
-                st.markdown("<span style='color:#a5b1c2;font-size:14px;'>Energy Analyst</span>", unsafe_allow_html=True)
-            
-            # Simple divider
-            st.markdown("<hr style='margin: 20px 0; border: none; height: 1px; background-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
-            
-            # App info
-            st.markdown("<div style='text-align: center; color: #a5b1c2; font-size: 12px; margin: 20px 0;'>Energy Anomaly Detection System<br>Version 2.5.0</div>", unsafe_allow_html=True)
+            # Simple welcome text
+            st.write(f"Welcome, {st.session_state.username}")
+            st.write("---")
             
             # Logout button
-            st.markdown("<div style='margin-top: 30px;'>", unsafe_allow_html=True)
-            if st.button("📤 Logout", use_container_width=True):
+            if st.button("Logout"):
                 logout_user()
                 st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
                 
             # Force hide the default sidebar nav via JavaScript
             js_code = """
