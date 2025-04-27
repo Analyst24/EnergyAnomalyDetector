@@ -1,6 +1,9 @@
-/* Hide the 'init' sidebar item with multiple selectors for better enforcement */
+/* Hide the 'init' sidebar item with aggressive selectors */
+div[data-testid="stSidebarNav"] > ul:first-child > li:first-child,
 span[data-testid="stSidebarNavItems"] > div:first-child,
 span[data-testid="stSidebarNavItems"] div:has(> a[href="/"]),
+a[href="/"],
+li:has(> a[href="/"]),
 div:has(> a[href="/"]) {
     display: none !important;
     visibility: hidden !important;
@@ -9,6 +12,10 @@ div:has(> a[href="/"]) {
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
+    position: absolute !important;
+    pointer-events: none !important;
+    clip: rect(0 0 0 0) !important;
+    opacity: 0 !important;
 }
 
 /* Hide the deploy and main menu buttons */

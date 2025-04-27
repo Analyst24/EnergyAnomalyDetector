@@ -9,6 +9,7 @@ from PIL import Image
 import plotly.express as px
 import plotly.graph_objects as go
 from streamlit_extras.colored_header import colored_header
+import streamlit.components.v1
 
 # Ensure path is set correctly for imports to work in any environment
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -348,15 +349,43 @@ def main():
             st.markdown(f"### Welcome, {st.session_state.username}")
             st.markdown("---")
             
-            # Hide init message from sidebar
+            # Aggressively hide init message from sidebar
             hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
             footer {visibility: hidden;}
             .stDeployButton {display:none;}
+            
+            /* Aggressive init item removal */
+            div[data-testid="stSidebarNav"] ul > li:first-child {display: none !important;}
+            section[data-testid="stSidebar"] div > ul > li:has(a[href="/"]) {display: none !important;}
+            a[href="/"] {display: none !important;}
             </style>
             """
             st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+            
+            # Execute JavaScript to remove init element
+            js_code = """
+            <script>
+            function removeInitElement() {
+                // Get all sidebar navigation items
+                const sidebarItems = document.querySelectorAll('[data-testid="stSidebar"] a');
+                
+                // Find and remove the "init" item
+                for (let item of sidebarItems) {
+                    if (item.href.endsWith('/') || item.textContent.toLowerCase().includes('init')) {
+                        const parentLi = item.closest('li');
+                        if (parentLi) parentLi.style.display = 'none';
+                    }
+                }
+            }
+            
+            // Run on load and periodically to catch dynamic content
+            document.addEventListener('DOMContentLoaded', removeInitElement);
+            setInterval(removeInitElement, 1000);
+            </script>
+            """
+            st.components.v1.html(js_code, height=0)
             
             if st.button("Logout"):
                 # Use the logout_user function from auth.py
