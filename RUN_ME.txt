@@ -9,20 +9,24 @@ To run this application on your local machine, please follow these steps:
    The database file will be created in the main directory as "energy_anomaly_detection.db"
 
 2. RUN THE APPLICATION: 
-   Open a command prompt or terminal in this directory and run:
+   For Windows users:
+   - Simply double-click on the run_app.bat file
    
-   streamlit run app.py
+   For all operating systems:
+   - Open a command prompt or terminal in this directory
+   - Run: python run.py
    
-   If that doesn't work, try:
-   
-   python -m streamlit run app.py
+   Alternative manual commands:
+   - streamlit run app.py --server.address=127.0.0.1
+   - python -m streamlit run app.py --server.address=127.0.0.1
 
 3. ACCESS THE APPLICATION:
    Once running, the application will be available at:
    
-   http://localhost:8501
+   http://127.0.0.1:8501 or http://localhost:8501
    
-   (Note: Streamlit uses port 8501 by default in local mode, not 5000)
+   Your web browser should open automatically. If not, copy and paste
+   the above address into your browser.
 
 4. LOGIN CREDENTIALS:
    Default admin user:

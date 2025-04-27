@@ -1,33 +1,16 @@
 [server]
-# When running in Replit or server environments
-# headless = true
-# address = "0.0.0.0"
-# port = 5000
-
-# For local development, using default settings works better
-enableCORS = true
-enableXsrfProtection = true
-enableWebsocketCompression = true
-
-[browser]
-gatherUsageStats = false
+headless = true
+address = "0.0.0.0"
+port = 5000
 
 [theme]
-# Dark theme settings
-primaryColor = "#00B0FF"
-backgroundColor = "#1E272E"
+base = "dark"
+primaryColor = "#3498DB"
+backgroundColor = "#1E2730"
 secondaryBackgroundColor = "#2C3E50"
 textColor = "#FFFFFF"
 font = "sans serif"
 
-[logger]
-level = "warning"
-
-[runner]
-magicEnabled = true
-fastReruns = true
-
-[global]
-developmentMode = false
-disableWatchdogWarning = true
-showWarningOnDirectExecution = false
+[browser]
+serverAddress = "localhost"
+gatherUsageStats = false

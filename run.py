@@ -20,8 +20,8 @@ def main():
     print("=== Energy Anomaly Detection System ===")
     print("Starting the application...")
     
-    # Normal launch command with default port (8501)
-    command = ["streamlit", "run", "app.py"]
+    # Launch with explicit localhost address and port
+    command = ["streamlit", "run", "app.py", "--server.address=127.0.0.1", "--server.port=8501", "--browser.serverAddress=127.0.0.1"]
     
     # Check if on Windows for correct command formatting
     if platform.system() == "Windows":

@@ -1,0 +1,73 @@
+/* 
+Custom CSS for Code Snippets in the Energy Anomaly Detection System
+*/
+
+.code-container {
+    position: relative;
+    margin: 1.5rem 0;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.code-header {
+    position: relative;
+    background-color: rgba(40, 40, 40, 0.6);
+    padding: 5px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.code-title {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.copy-button {
+    background-color: rgba(70, 70, 70, 0.8);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.copy-button:hover {
+    background-color: rgba(100, 100, 100, 0.8);
+}
+
+.copy-button.copied {
+    background-color: rgba(40, 167, 69, 0.8);
+}
+
+.stCodeBlock {
+    margin-top: 0 !important;
+}
+
+/* Card styles for snippet containers */
+.snippet-card {
+    background-color: #2C3E50;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 25px;
+    border-left: 4px solid #00B0FF;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.snippet-card h3 {
+    margin-top: 0;
+    color: #ffffff;
+    font-size: 18px;
+}
+
+.snippet-description {
+    margin-bottom: 15px;
+    color: #e0e0e0;
+    font-size: 14px;
+}

@@ -85,20 +85,40 @@ def create_user(username: str, email: str, password: str, full_name: str = None,
         Optional[Dict]: User data dict if successful, None if error
     """
     try:
-        db = get_db_session()
+        # Get database session from generator
+        db_gen = get_db_session()
+        db = next(db_gen)
         
         # Check if username or email already exists
-        if get_user_by_username(db, username):
+        user_by_name = get_user_by_username(db, username)
+        if user_by_name:
             st.error(f"Username '{username}' already exists")
+            # Close session
+            try:
+                next(db_gen)
+            except StopIteration:
+                pass
             return None
             
-        if get_user_by_email(db, email):
+        user_by_email = get_user_by_email(db, email)
+        if user_by_email:
             st.error(f"Email '{email}' already exists")
+            # Close session
+            try:
+                next(db_gen)
+            except StopIteration:
+                pass
             return None
             
         # Create the user
         user = db_create_user(db, username, email, password, full_name, role)
         
+        # Close session
+        try:
+            next(db_gen)
+        except StopIteration:
+            pass
+            
         if user:
             return {
                 "id": user.id,
@@ -178,7 +198,12 @@ def login_user(username_or_email: str, password: str = None) -> bool:
         bool: True if login was successful, False otherwise
     """
     try:
-        db = get_db_session()
+        # Get database session from generator
+        db_gen = get_db_session()
+        db = next(db_gen)
+        
+        user = None
+        login_success = False
         
         # If password is provided, verify credentials
         if password:
@@ -197,9 +222,7 @@ def login_user(username_or_email: str, password: str = None) -> bool:
                 st.session_state['user_id'] = user.id
                 st.session_state['user_role'] = user.role
                 st.session_state['user_full_name'] = user.full_name or ""
-                return True
-            else:
-                return False
+                login_success = True
         else:
             # Direct login by username (used internally)
             user = get_user_by_username(db, username_or_email)
@@ -210,10 +233,17 @@ def login_user(username_or_email: str, password: str = None) -> bool:
                 st.session_state['user_id'] = user.id
                 st.session_state['user_role'] = user.role
                 st.session_state['user_full_name'] = user.full_name or ""
-                return True
+                login_success = True
             else:
                 st.error(f"User {username_or_email} not found")
-                return False
+        
+        # Close session
+        try:
+            next(db_gen)
+        except StopIteration:
+            pass
+            
+        return login_success
     except Exception as e:
         st.error(f"Error logging in: {str(e)}")
         return False
