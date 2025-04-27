@@ -1,6 +1,14 @@
-/* Hide the 'init' sidebar item */
-span[data-testid="stSidebarNavItems"] > div:first-child {
+/* Hide the 'init' sidebar item with multiple selectors for better enforcement */
+span[data-testid="stSidebarNavItems"] > div:first-child,
+span[data-testid="stSidebarNavItems"] div:has(> a[href="/"]),
+div:has(> a[href="/"]) {
     display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
 }
 
 /* Hide the deploy and main menu buttons */

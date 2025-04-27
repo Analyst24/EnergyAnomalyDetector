@@ -2,6 +2,19 @@
 headless = true
 address = "0.0.0.0"
 port = 5000
+enableCORS = false
+enableXsrfProtection = false
+maxUploadSize = 200
+maxMessageSize = 200
+
+[browser]
+gatherUsageStats = false
+serverAddress = "0.0.0.0"
+serverPort = 5000
+
+[runner]
+fastReruns = true
+magicEnabled = true
 
 [theme]
 base = "dark"
@@ -9,3 +22,6 @@ primaryColor = "#4b7bec"
 backgroundColor = "#1e272e"
 secondaryBackgroundColor = "#2d3436"
 textColor = "#ffffff"
+
+[logger]
+level = "error"
