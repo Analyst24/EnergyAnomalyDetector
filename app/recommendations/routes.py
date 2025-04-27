@@ -15,16 +15,16 @@ from app.models import Dataset, AnalysisResult
 # Custom JSON encoder to handle timedelta objects
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder that handles timedelta objects."""
-    def default(self, obj):
-        if isinstance(obj, timedelta):
+    def default(self, o):
+        if isinstance(o, timedelta):
             # Convert timedelta to dictionary with days, hours, minutes, seconds
             return {
                 "_type": "timedelta",
-                "days": obj.days,
-                "seconds": obj.seconds,
-                "microseconds": obj.microseconds
+                "days": o.days,
+                "seconds": o.seconds,
+                "microseconds": o.microseconds
             }
-        return super().default(obj)
+        return super().default(o)
 
 
 # Function to convert serialized timedelta back to timedelta object
@@ -185,7 +185,7 @@ def index():
                           title='Energy Efficiency Recommendations',
                           analyses=analyses,
                           recommendations=recommendations,
-                          timeline_data=json.dumps(timeline_data),
+                          timeline_data=json.dumps(timeline_data, cls=CustomJSONEncoder),
                           latest_analysis=analyses[0] if analyses else None)
 
 
@@ -215,7 +215,7 @@ def for_analysis(analysis_id):
                           analysis=analysis,
                           dataset=dataset,
                           recommendations=recommendations,
-                          timeline_data=json.dumps(timeline_data))
+                          timeline_data=json.dumps(timeline_data, cls=CustomJSONEncoder))
 
 
 @recommendations_bp.route('/api/timeline/<int:analysis_id>')
@@ -238,4 +238,8 @@ def api_timeline(analysis_id):
     # Generate implementation timeline
     timeline_data = generate_implementation_timeline(recommendations)
     
-    return jsonify({'timeline': timeline_data})
+    # Use the custom encoder for the response
+    return current_app.response_class(
+        json.dumps({'timeline': timeline_data}, cls=CustomJSONEncoder),
+        mimetype='application/json'
+    )
