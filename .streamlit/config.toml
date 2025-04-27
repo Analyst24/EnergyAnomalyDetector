@@ -2,6 +2,15 @@
 headless = true
 address = "0.0.0.0"
 port = 5000
+# Enforce offline mode
+enableCORS = false
+enableXsrfProtection = false
+runOnSave = true
+maxUploadSize = 200
+
+[browser]
+gatherUsageStats = false
+serverAddress = "localhost"
 
 [theme]
 primaryColor = "#4b7bec"
@@ -9,3 +18,7 @@ backgroundColor = "#1e272e"
 secondaryBackgroundColor = "#2d3436"
 textColor = "#ffffff"
 font = "sans serif"
+
+[client]
+toolbarMode = "minimal"
+showErrorDetails = true

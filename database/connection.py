@@ -11,12 +11,24 @@ from sqlalchemy.exc import SQLAlchemyError
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Get database URL from environment variables
-DATABASE_URL = os.environ.get('DATABASE_URL', '')
+# Check if running in environment with PostgreSQL (like Replit)
+if os.environ.get('DATABASE_URL'):
+    # Use PostgreSQL if available
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    logger.info("Using PostgreSQL database")
+else:
+    # Use local SQLite database for offline mode
+    DATABASE_URL = "sqlite:///./energy_anomaly_detection.db"
+    logger.info("Using local SQLite database for offline mode")
 
 # Create engine
 try:
-    engine = create_engine(DATABASE_URL)
+    # For SQLite, we need to add check_same_thread=False for multiple threads access
+    connect_args = {}
+    if DATABASE_URL.startswith('sqlite'):
+        connect_args = {"check_same_thread": False}
+        
+    engine = create_engine(DATABASE_URL, connect_args=connect_args)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     logger.info("Database connection established successfully")
 except SQLAlchemyError as e:
