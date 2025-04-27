@@ -214,7 +214,7 @@ def get_datasets_by_user(db: Session, user_id: int, skip: int = 0, limit: int = 
 
 def create_dataset(db: Session, user_id: int, name: str, description: str = None, 
                   file_path: str = None, row_count: int = None, column_count: int = None,
-                  time_period: str = None, metadata: Dict = None) -> Dataset:
+                  time_period: str = None, dataset_metadata: Dict = None) -> Dataset:
     """
     Create a new dataset.
     
@@ -227,7 +227,7 @@ def create_dataset(db: Session, user_id: int, name: str, description: str = None
         row_count: Number of rows in the dataset
         column_count: Number of columns in the dataset
         time_period: Time period covered by the dataset
-        metadata: Additional metadata
+        dataset_metadata: Additional metadata
         
     Returns:
         Dataset: The created dataset
@@ -240,7 +240,7 @@ def create_dataset(db: Session, user_id: int, name: str, description: str = None
         row_count=row_count,
         column_count=column_count,
         time_period=time_period,
-        metadata=metadata or {}
+        dataset_metadata=dataset_metadata or {}
     )
     try:
         db.add(db_dataset)

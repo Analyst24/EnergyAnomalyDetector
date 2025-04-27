@@ -48,7 +48,7 @@ class Dataset(Base):
     row_count = Column(Integer)
     column_count = Column(Integer)
     time_period = Column(String(100))  # e.g., "Jan 2023 - Mar 2023"
-    metadata = Column(JSON)  # Store additional metadata as JSON
+    dataset_metadata = Column(JSON)  # Store additional metadata as JSON
     
     # Relationships
     user = relationship("User", back_populates="datasets")
