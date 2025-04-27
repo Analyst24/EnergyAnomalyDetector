@@ -97,7 +97,7 @@ def create_demo_data(db: Session):
             row_count=1000,
             column_count=5,
             time_period="Jan 2023 - Feb 2023",
-            metadata={
+            dataset_metadata={
                 "source": "system-generated",
                 "units": "kWh",
                 "building_type": "Office Building",
