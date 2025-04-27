@@ -144,50 +144,7 @@ if not st.session_state.db_initialized:
         st.error(f"Error initializing database: {e}")
         st.session_state.db_initialized = False
 
-# Function to display a background image
-def add_bg_image():
-    # Create a dark gradient background instead of loading an image
-    bg_style = """
-    <style>
-    .stApp {
-        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-        background-size: cover;
-        background-position: center;
-    }
-    .auth-container {
-        background-color: rgba(45, 52, 54, 0.85);
-        border-radius: 10px;
-        padding: 30px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        max-width: 450px;
-        margin: 10vh auto;
-    }
-    .auth-header {
-        color: white;
-        text-align: center;
-        margin-bottom: 25px;
-    }
-    .auth-button {
-        width: 100%;
-        margin-top: 15px;
-    }
-    .auth-link {
-        text-align: center;
-        margin-top: 20px;
-        color: #4b7bec;
-        cursor: pointer;
-    }
-    .auth-link:hover {
-        text-decoration: underline;
-    }
-    .stButton button {
-        width: 100%;
-    }
-    </style>
-    """
-    st.markdown(bg_style, unsafe_allow_html=True)
-
-# Function to convert image to base64
+# Function to convert image to base64 (used for embedded images in the app)
 def image_to_base64(image):
     import io
     import base64
@@ -197,6 +154,7 @@ def image_to_base64(image):
 
 # Login page
 def login_page():
+    """Render the login page with energy-related background"""
     # Hide the sidebar completely
     st.markdown("""
     <style>
@@ -204,38 +162,16 @@ def login_page():
     section[data-testid="stSidebar"] {display: none}
     .stApp header {display: none}
     
-    /* Moving energy background animation styles */
+    /* Static energy background styles */
     .stApp {
-        background-color: #040f2d !important;
-        background-image: none !important;
+        background-color: #0a2446 !important;
+        background-image: linear-gradient(135deg, #0a2446 0%, #103a6c 100%) !important;
         position: relative;
         overflow: hidden;
     }
     
-    .energy-background {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -2;
-        background: linear-gradient(135deg, 
-                    rgba(7, 15, 40, 0.97),
-                    rgba(16, 42, 94, 0.9),
-                    rgba(10, 50, 110, 0.9),
-                    rgba(5, 25, 55, 0.95));
-        background-size: 400% 400%;
-        animation: flow 15s ease infinite;
-    }
-    
-    @keyframes flow {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-    
-    /* Grid overlay for smart grid visualization */
-    .grid-overlay {
+    /* Background with energy grid pattern */
+    .energy-grid-bg {
         position: fixed;
         top: 0;
         left: 0;
@@ -243,79 +179,39 @@ def login_page():
         height: 100%;
         z-index: -1;
         background-image: 
-            linear-gradient(rgba(40, 130, 220, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(40, 130, 220, 0.05) 1px, transparent 1px);
-        background-size: 30px 30px;
+            linear-gradient(rgba(14, 118, 168, 0.07) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(14, 118, 168, 0.07) 1px, transparent 1px);
+        background-size: 20px 20px;
     }
     
-    /* Energy flow lines */
-    .flow-line {
-        position: absolute;
-        height: 2px;
-        background: linear-gradient(to right, 
-                    rgba(0, 212, 255, 0), 
-                    rgba(0, 212, 255, 0.5), 
-                    rgba(0, 212, 255, 0));
-        animation: flow-animation linear infinite;
-    }
-    
-    @keyframes flow-animation {
-        0% { transform: translateX(-100%); opacity: 0; }
-        10% { opacity: 1; }
-        90% { opacity: 1; }
-        100% { transform: translateX(100vw); opacity: 0; }
-    }
-    
-    /* Energy nodes */
-    .energy-node {
-        position: absolute;
-        width: 4px;
-        height: 4px;
-        background-color: rgba(40, 130, 220, 0.7);
-        border-radius: 50%;
-        box-shadow: 0 0 8px 2px rgba(40, 130, 220, 0.4);
-        animation: pulse 3s ease-in-out infinite;
-    }
-    
-    @keyframes pulse {
-        0% { transform: scale(1); opacity: 0.7; }
-        50% { transform: scale(1.4); opacity: 1; }
-        100% { transform: scale(1); opacity: 0.7; }
-    }
-    
+    /* Professional login form styling */
     .auth-container {
-        background-color: rgba(15, 25, 55, 0.8);
+        background-color: rgba(15, 30, 57, 0.85);
         border-radius: 10px;
         padding: 30px;
-        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
         max-width: 450px;
-        margin: 10vh auto;
+        margin: 12vh auto;
         border: 1px solid rgba(72, 126, 176, 0.2);
-        backdrop-filter: blur(8px);
+        backdrop-filter: blur(5px);
+    }
+    
+    .app-logo {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .app-logo img {
+        max-width: 120px;
+        margin-bottom: 10px;
     }
     
     .auth-header {
         color: white;
         text-align: center;
-        margin-bottom: 25px;
+        margin-bottom: 30px;
         font-weight: 600;
         letter-spacing: 0.5px;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    }
-    
-    .auth-button {
-        width: 100%;
-        margin-top: 15px;
-        background-color: #3498db;
-        border: none;
-        color: white;
-        padding: 10px;
-        border-radius: 5px;
-        transition: background-color 0.3s;
-    }
-    
-    .auth-button:hover {
-        background-color: #2980b9;
     }
     
     .auth-link {
@@ -330,124 +226,82 @@ def login_page():
         color: #3498db;
     }
     
-    .stButton button {
-        background-color: #3498db !important;
-        color: white !important;
-        border: none !important;
-        padding: 10px !important;
-        font-weight: 500 !important;
-        width: 100%;
+    .login-title {
+        color: white;
+        text-align: center;
+        margin-bottom: 15px;
     }
     
-    .stButton button:hover {
-        background-color: #2980b9 !important;
-    }
-    
+    /* Input field styling */
     .stTextInput label, .stTextInput label p, .stPasswordInput label {
         color: #e0e0e0 !important;
+        font-weight: 500 !important;
     }
     
     .stTextInput input, .stPasswordInput input {
         background-color: rgba(255, 255, 255, 0.1) !important;
         color: white !important;
         border: 1px solid rgba(72, 126, 176, 0.3) !important;
+        border-radius: 5px !important;
+        padding: 10px 12px !important;
     }
     
     .stTextInput input:focus, .stPasswordInput input:focus {
         border: 1px solid rgba(72, 126, 176, 0.8) !important;
         box-shadow: 0 0 0 1px rgba(72, 126, 176, 0.3) !important;
     }
+    
+    /* Login button styling */
+    .stButton button {
+        background-color: #3498db !important;
+        color: white !important;
+        border: none !important;
+        padding: 12px !important;
+        font-weight: 500 !important;
+        width: 100%;
+        border-radius: 5px !important;
+        margin-top: 10px !important;
+        transition: background-color 0.3s !important;
+    }
+    
+    .stButton button:hover {
+        background-color: #2980b9 !important;
+    }
+    
+    /* Energy icon styling */
+    .energy-icon {
+        font-size: 48px;
+        margin-bottom: 10px;
+        text-align: center;
+        color: #3498db;
+    }
+    
+    /* Form field spacing */
+    .form-spacer {
+        margin-bottom: 15px;
+    }
     </style>
     
-    <!-- Animated energy background elements -->
-    <div class="energy-background"></div>
-    <div class="grid-overlay"></div>
-    <div id="energy-animation-container"></div>
-    
-    <script>
-    // Create animated energy flow lines and nodes
-    document.addEventListener('DOMContentLoaded', function() {
-        const container = document.createElement('div');
-        container.style.position = 'fixed';
-        container.style.top = '0';
-        container.style.left = '0';
-        container.style.width = '100vw';
-        container.style.height = '100vh';
-        container.style.zIndex = '-1';
-        container.style.overflow = 'hidden';
-        container.id = 'energy-animation-container';
-        document.body.appendChild(container);
-        
-        // Create flow lines
-        for (let i = 0; i < 15; i++) {
-            createFlowLine(container);
-        }
-        
-        // Create energy nodes
-        for (let i = 0; i < 30; i++) {
-            createEnergyNode(container);
-        }
-        
-        setInterval(() => {
-            if (Math.random() > 0.7) {
-                createFlowLine(container);
-            }
-        }, 2000);
-    });
-    
-    function createFlowLine(container) {
-        const line = document.createElement('div');
-        line.className = 'flow-line';
-        
-        // Random position and properties
-        const yPos = Math.random() * 100;
-        const width = Math.random() * 100 + 50;
-        const duration = Math.random() * 5 + 5;
-        const opacity = Math.random() * 0.5 + 0.2;
-        
-        line.style.top = `${yPos}vh`;
-        line.style.width = `${width}px`;
-        line.style.opacity = opacity;
-        line.style.animationDuration = `${duration}s`;
-        
-        container.appendChild(line);
-        
-        // Remove after animation completes
-        setTimeout(() => {
-            line.remove();
-        }, duration * 1000);
-    }
-    
-    function createEnergyNode(container) {
-        const node = document.createElement('div');
-        node.className = 'energy-node';
-        
-        // Random position and properties
-        const xPos = Math.random() * 100;
-        const yPos = Math.random() * 100;
-        const duration = Math.random() * 3 + 2;
-        const delay = Math.random() * 2;
-        const size = Math.random() * 3 + 2;
-        
-        node.style.left = `${xPos}vw`;
-        node.style.top = `${yPos}vh`;
-        node.style.width = `${size}px`;
-        node.style.height = `${size}px`;
-        node.style.animationDuration = `${duration}s`;
-        node.style.animationDelay = `${delay}s`;
-        
-        container.appendChild(node);
-    }
-    </script>
+    <!-- Energy grid background -->
+    <div class="energy-grid-bg"></div>
     """, unsafe_allow_html=True)
     
-    # Add container for login form with animated energy background
+    # Add login form container
     st.markdown('<div class="auth-container">', unsafe_allow_html=True)
-    st.markdown('<h1 class="auth-header">⚡ Energy Anomaly Detection</h1>', unsafe_allow_html=True)
     
-    email = st.text_input("Email", key="login_email")
-    password = st.text_input("Password", type="password", key="login_password")
+    # Energy logo/icon
+    st.markdown('<div class="energy-icon">⚡</div>', unsafe_allow_html=True)
+    st.markdown('<h1 class="login-title">Energy Anomaly Detection</h1>', unsafe_allow_html=True)
+    st.markdown('<h3 class="login-title" style="font-size: 1.2rem; opacity: 0.9;">Professional Login</h3>', unsafe_allow_html=True)
     
+    # Add some space
+    st.markdown('<div class="form-spacer"></div>', unsafe_allow_html=True)
+    
+    # Login form
+    email = st.text_input("Email", key="login_email", placeholder="Enter your email")
+    password = st.text_input("Password", type="password", key="login_password", placeholder="Enter your password")
+    
+    # Login button
     login_btn = st.button("Login", key="login_button")
     
     if login_btn:
@@ -459,7 +313,7 @@ def login_page():
         else:
             st.error("Invalid email or password. Please try again or sign up for a new account.")
     
-    # Link to sign up page
+    # Sign up link
     st.markdown('<div class="auth-link" id="signup-link">Don\'t have an account? Sign up</div>', unsafe_allow_html=True)
     
     # JavaScript to handle the sign up link click
@@ -473,7 +327,7 @@ def login_page():
     </script>
     """, unsafe_allow_html=True)
     
-    # Check if signup link was clicked
+    # Hidden button for signup navigation
     if st.button("Sign Up", key="goto_signup", help="Create a new account"):
         st.session_state.show_signup = True
         st.rerun()
@@ -567,6 +421,7 @@ def get_started_page():
 
 # Sign up page
 def signup_page():
+    """Render the signup page with matching energy-related background"""
     # Hide the sidebar completely
     st.markdown("""
     <style>
@@ -574,38 +429,16 @@ def signup_page():
     section[data-testid="stSidebar"] {display: none}
     .stApp header {display: none}
     
-    /* Moving energy background animation styles */
+    /* Static energy background styles */
     .stApp {
-        background-color: #040f2d !important;
-        background-image: none !important;
+        background-color: #0a2446 !important;
+        background-image: linear-gradient(135deg, #0a2446 0%, #103a6c 100%) !important;
         position: relative;
         overflow: hidden;
     }
     
-    .energy-background {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -2;
-        background: linear-gradient(135deg, 
-                    rgba(7, 15, 40, 0.97),
-                    rgba(16, 42, 94, 0.9),
-                    rgba(10, 50, 110, 0.9),
-                    rgba(5, 25, 55, 0.95));
-        background-size: 400% 400%;
-        animation: flow 15s ease infinite;
-    }
-    
-    @keyframes flow {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-    
-    /* Grid overlay for smart grid visualization */
-    .grid-overlay {
+    /* Background with energy grid pattern */
+    .energy-grid-bg {
         position: fixed;
         top: 0;
         left: 0;
@@ -613,64 +446,39 @@ def signup_page():
         height: 100%;
         z-index: -1;
         background-image: 
-            linear-gradient(rgba(40, 130, 220, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(40, 130, 220, 0.05) 1px, transparent 1px);
-        background-size: 30px 30px;
+            linear-gradient(rgba(14, 118, 168, 0.07) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(14, 118, 168, 0.07) 1px, transparent 1px);
+        background-size: 20px 20px;
     }
     
-    /* Energy flow lines */
-    .flow-line {
-        position: absolute;
-        height: 2px;
-        background: linear-gradient(to right, 
-                    rgba(0, 212, 255, 0), 
-                    rgba(0, 212, 255, 0.5), 
-                    rgba(0, 212, 255, 0));
-        animation: flow-animation linear infinite;
-    }
-    
-    @keyframes flow-animation {
-        0% { transform: translateX(-100%); opacity: 0; }
-        10% { opacity: 1; }
-        90% { opacity: 1; }
-        100% { transform: translateX(100vw); opacity: 0; }
-    }
-    
-    /* Energy nodes */
-    .energy-node {
-        position: absolute;
-        width: 4px;
-        height: 4px;
-        background-color: rgba(40, 130, 220, 0.7);
-        border-radius: 50%;
-        box-shadow: 0 0 8px 2px rgba(40, 130, 220, 0.4);
-        animation: pulse 3s ease-in-out infinite;
-    }
-    
-    @keyframes pulse {
-        0% { transform: scale(1); opacity: 0.7; }
-        50% { transform: scale(1.4); opacity: 1; }
-        100% { transform: scale(1); opacity: 0.7; }
-    }
-    
+    /* Professional signup form styling */
     .auth-container {
-        background-color: rgba(15, 25, 55, 0.8);
+        background-color: rgba(15, 30, 57, 0.85);
         border-radius: 10px;
         padding: 30px;
-        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
         max-width: 450px;
         margin: 5vh auto;
         border: 1px solid rgba(72, 126, 176, 0.2);
-        backdrop-filter: blur(8px);
+        backdrop-filter: blur(5px);
+    }
+    
+    .app-logo {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .app-logo img {
+        max-width: 120px;
+        margin-bottom: 10px;
     }
     
     .auth-header {
         color: white;
         text-align: center;
-        margin-bottom: 25px;
+        margin-bottom: 30px;
         font-weight: 600;
         letter-spacing: 0.5px;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
     
     .auth-link {
@@ -685,27 +493,24 @@ def signup_page():
         color: #3498db;
     }
     
-    .stButton button {
-        background-color: #3498db !important;
-        color: white !important;
-        border: none !important;
-        padding: 10px !important;
-        font-weight: 500 !important;
-        width: 100%;
+    .signup-title {
+        color: white;
+        text-align: center;
+        margin-bottom: 15px;
     }
     
-    .stButton button:hover {
-        background-color: #2980b9 !important;
-    }
-    
+    /* Input field styling */
     .stTextInput label, .stTextInput label p, .stPasswordInput label {
         color: #e0e0e0 !important;
+        font-weight: 500 !important;
     }
     
     .stTextInput input, .stPasswordInput input {
         background-color: rgba(255, 255, 255, 0.1) !important;
         color: white !important;
         border: 1px solid rgba(72, 126, 176, 0.3) !important;
+        border-radius: 5px !important;
+        padding: 10px 12px !important;
     }
     
     .stTextInput input:focus, .stPasswordInput input:focus {
@@ -713,104 +518,51 @@ def signup_page():
         box-shadow: 0 0 0 1px rgba(72, 126, 176, 0.3) !important;
     }
     
-    /* Signup title */
-    .signup-title {
-        color: white;
+    /* Button styling */
+    .stButton button {
+        background-color: #3498db !important;
+        color: white !important;
+        border: none !important;
+        padding: 12px !important;
+        font-weight: 500 !important;
+        width: 100%;
+        border-radius: 5px !important;
+        margin-top: 10px !important;
+        transition: background-color 0.3s !important;
+    }
+    
+    .stButton button:hover {
+        background-color: #2980b9 !important;
+    }
+    
+    /* Energy icon styling */
+    .energy-icon {
+        font-size: 48px;
+        margin-bottom: 10px;
         text-align: center;
-        margin-bottom: 20px;
-        padding-top: 40px;
-        text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        color: #3498db;
+    }
+    
+    /* Form field spacing */
+    .form-spacer {
+        margin-bottom: 15px;
     }
     </style>
     
-    <!-- Animated energy background elements -->
-    <div class="energy-background"></div>
-    <div class="grid-overlay"></div>
-    <div id="energy-animation-container-signup"></div>
-    
-    <script>
-    // Create animated energy flow lines and nodes
-    document.addEventListener('DOMContentLoaded', function() {
-        const container = document.createElement('div');
-        container.style.position = 'fixed';
-        container.style.top = '0';
-        container.style.left = '0';
-        container.style.width = '100vw';
-        container.style.height = '100vh';
-        container.style.zIndex = '-1';
-        container.style.overflow = 'hidden';
-        container.id = 'energy-animation-container-signup';
-        document.body.appendChild(container);
-        
-        // Create flow lines
-        for (let i = 0; i < 15; i++) {
-            createFlowLine(container);
-        }
-        
-        // Create energy nodes
-        for (let i = 0; i < 30; i++) {
-            createEnergyNode(container);
-        }
-        
-        setInterval(() => {
-            if (Math.random() > 0.7) {
-                createFlowLine(container);
-            }
-        }, 2000);
-    });
-    
-    function createFlowLine(container) {
-        const line = document.createElement('div');
-        line.className = 'flow-line';
-        
-        // Random position and properties
-        const yPos = Math.random() * 100;
-        const width = Math.random() * 100 + 50;
-        const duration = Math.random() * 5 + 5;
-        const opacity = Math.random() * 0.5 + 0.2;
-        
-        line.style.top = `${yPos}vh`;
-        line.style.width = `${width}px`;
-        line.style.opacity = opacity;
-        line.style.animationDuration = `${duration}s`;
-        
-        container.appendChild(line);
-        
-        // Remove after animation completes
-        setTimeout(() => {
-            line.remove();
-        }, duration * 1000);
-    }
-    
-    function createEnergyNode(container) {
-        const node = document.createElement('div');
-        node.className = 'energy-node';
-        
-        // Random position and properties
-        const xPos = Math.random() * 100;
-        const yPos = Math.random() * 100;
-        const duration = Math.random() * 3 + 2;
-        const delay = Math.random() * 2;
-        const size = Math.random() * 3 + 2;
-        
-        node.style.left = `${xPos}vw`;
-        node.style.top = `${yPos}vh`;
-        node.style.width = `${size}px`;
-        node.style.height = `${size}px`;
-        node.style.animationDuration = `${duration}s`;
-        node.style.animationDelay = `${delay}s`;
-        
-        container.appendChild(node);
-    }
-    </script>
+    <!-- Energy grid background -->
+    <div class="energy-grid-bg"></div>
     """, unsafe_allow_html=True)
     
-    # Page title with animated background
-    st.markdown("<h1 class='signup-title'>⚡ Energy Anomaly Detection</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 class='signup-title' style='font-size: 1.5rem;'>Create Your Account</h3>", unsafe_allow_html=True)
-    
-    # Add container for signup form
+    # Add signup form container
     st.markdown('<div class="auth-container">', unsafe_allow_html=True)
+    
+    # Energy logo/icon
+    st.markdown('<div class="energy-icon">⚡</div>', unsafe_allow_html=True)
+    st.markdown('<h1 class="signup-title">Create Account</h1>', unsafe_allow_html=True)
+    st.markdown('<h3 class="signup-title" style="font-size: 1.1rem; opacity: 0.9;">Energy Anomaly Detection System</h3>', unsafe_allow_html=True)
+    
+    # Add some space
+    st.markdown('<div class="form-spacer"></div>', unsafe_allow_html=True)
     
     # Form fields with placeholders
     full_name = st.text_input("Full Name", key="signup_name", placeholder="Enter your full name")
