@@ -1,8 +1,8 @@
 """
-Insights module for the Energy Anomaly Detection System
+Insights blueprint for energy data visualization and insights.
 """
 from flask import Blueprint
 
-insights = Blueprint('insights', __name__, url_prefix='/insights')
+insights_bp = Blueprint('insights', __name__, url_prefix='/insights')
 
-from . import routes
+from app.insights import routes

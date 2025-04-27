@@ -1,8 +1,8 @@
 """
-Settings module for the Energy Anomaly Detection System
+Settings blueprint for user preferences and system settings.
 """
 from flask import Blueprint
 
-settings = Blueprint('settings', __name__, url_prefix='/settings')
+settings_bp = Blueprint('settings', __name__, url_prefix='/settings')
 
-from . import routes
+from app.settings import routes
