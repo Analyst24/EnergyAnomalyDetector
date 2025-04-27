@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="150" height="150" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .main { fill: #0d6efd; }
+    .accent { fill: #dc3545; }
+    .glow { filter: url(#glow-effect); }
+  </style>
+  <defs>
+    <filter id="glow-effect" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <g transform="translate(75,75)">
+    <!-- Circular power/energy icon base -->
+    <circle cx="0" cy="0" r="45" fill="#1a1a1a" stroke="#0d6efd" stroke-width="2"/>
+    
+    <!-- Energy bolt symbol -->
+    <path class="main glow" d="M0,-35 L20,-10 L5,-10 L15,35 L-15,5 L0,5 Z" />
+    
+    <!-- Circular data flow ring -->
+    <g fill="none" stroke="#0d6efd" stroke-width="2.5" stroke-dasharray="8,4,2,4">
+      <circle cx="0" cy="0" r="55" />
+    </g>
+    
+    <!-- Anomaly indicators -->
+    <circle class="accent glow" cx="25" cy="-30" r="6" />
+    <circle class="accent glow" cx="-35" cy="20" r="4" />
+    <circle class="accent glow" cx="30" cy="30" r="5" />
+    
+    <!-- Data points/signals -->
+    <g fill="#ffffff">
+      <circle cx="-38" cy="-32" r="2" />
+      <circle cx="42" cy="-18" r="2" />
+      <circle cx="-42" cy="12" r="2" />
+      <circle cx="12" cy="44" r="2" />
+      <circle cx="-18" cy="-42" r="2" />
+      <circle cx="38" cy="8" r="2" />
+    </g>
+    
+    <!-- Pulse rings for live effect -->
+    <g fill="none" stroke="#0d6efd" stroke-width="0.8" opacity="0.6">
+      <circle cx="0" cy="0" r="65" />
+    </g>
+  </g>
+</svg>
