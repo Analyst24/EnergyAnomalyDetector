@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    .accordion-button:not(.collapsed) {
+        background-color: #343a40;
+        color: white;
+    }
+    .accordion-button:not(.collapsed)::after {
+        filter: brightness(0) invert(1);
+    }
+    .code-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 16px;
+        background-color: #2d333b;
+        border-bottom: 1px solid #444c56;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+    }
+    .code-container {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    .copy-button {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 10;
+    }
+    .snippet-card {
+        transition: transform 0.3s;
+    }
+    .snippet-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card bg-dark text-light border-secondary">
+            <div class="card-body">
+                <h2>Code Snippets Library</h2>
+                <p class="lead">
+                    Use these code snippets to implement custom energy anomaly detection workflows.
+                    All snippets work with the offline Python environment and standard data formats.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-dark text-light border-secondary sticky-top" style="top: 20px;">
+            <div class="card-header bg-dark">
+                <h4>Categories</h4>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <a href="#data-loading" class="list-group-item list-group-item-action bg-dark text-light border-secondary">Data Loading</a>
+                    <a href="#preprocessing" class="list-group-item list-group-item-action bg-dark text-light border-secondary">Preprocessing</a>
+                    <a href="#anomaly-detection" class="list-group-item list-group-item-action bg-dark text-light border-secondary">Anomaly Detection</a>
+                    <a href="#visualization" class="list-group-item list-group-item-action bg-dark text-light border-secondary">Visualization</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <!-- Data Loading Snippets -->
+        <section id="data-loading" class="mb-5">
+            <h3 class="border-bottom border-secondary pb-2">Data Loading</h3>
+            <p class="text-muted">Functions to load and prepare energy consumption data for analysis.</p>
+            
+            <div class="row">
+                {% for snippet in data_loading_snippets %}
+                <div class="col-md-12 mb-4">
+                    <div class="card bg-dark text-light border-secondary snippet-card">
+                        <div class="card-header bg-dark">
+                            <h5 class="mb-0">{{ snippet.title }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>{{ snippet.description }}</p>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="badge bg-primary">Python</span>
+                                    <button class="btn btn-sm btn-outline-light copy-button" 
+                                            data-clipboard-target="#snippet-{{ loop.index }}">
+                                        <i class="bi bi-clipboard"></i> Copy
+                                    </button>
+                                </div>
+                                <pre><code class="language-python" id="snippet-{{ loop.index }}">{{ snippet.code }}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        
+        <!-- Preprocessing Snippets -->
+        <section id="preprocessing" class="mb-5">
+            <h3 class="border-bottom border-secondary pb-2">Preprocessing</h3>
+            <p class="text-muted">Functions to clean, transform, and prepare energy data for anomaly detection.</p>
+            
+            <div class="row">
+                {% for snippet in preprocessing_snippets %}
+                <div class="col-md-12 mb-4">
+                    <div class="card bg-dark text-light border-secondary snippet-card">
+                        <div class="card-header bg-dark">
+                            <h5 class="mb-0">{{ snippet.title }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>{{ snippet.description }}</p>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="badge bg-primary">Python</span>
+                                    <button class="btn btn-sm btn-outline-light copy-button" 
+                                            data-clipboard-target="#snippet-{{ loop.index + 100 }}">
+                                        <i class="bi bi-clipboard"></i> Copy
+                                    </button>
+                                </div>
+                                <pre><code class="language-python" id="snippet-{{ loop.index + 100 }}">{{ snippet.code }}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        
+        <!-- Anomaly Detection Snippets -->
+        <section id="anomaly-detection" class="mb-5">
+            <h3 class="border-bottom border-secondary pb-2">Anomaly Detection</h3>
+            <p class="text-muted">Implementations of machine learning algorithms for detecting anomalies in energy data.</p>
+            
+            <div class="row">
+                {% for snippet in anomaly_detection_snippets %}
+                <div class="col-md-12 mb-4">
+                    <div class="card bg-dark text-light border-secondary snippet-card">
+                        <div class="card-header bg-dark">
+                            <h5 class="mb-0">{{ snippet.title }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>{{ snippet.description }}</p>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="badge bg-primary">Python</span>
+                                    <button class="btn btn-sm btn-outline-light copy-button" 
+                                            data-clipboard-target="#snippet-{{ loop.index + 200 }}">
+                                        <i class="bi bi-clipboard"></i> Copy
+                                    </button>
+                                </div>
+                                <pre><code class="language-python" id="snippet-{{ loop.index + 200 }}">{{ snippet.code }}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        
+        <!-- Visualization Snippets -->
+        <section id="visualization" class="mb-5">
+            <h3 class="border-bottom border-secondary pb-2">Visualization</h3>
+            <p class="text-muted">Functions to create interactive visualizations of energy data and anomalies.</p>
+            
+            <div class="row">
+                {% for snippet in visualization_snippets %}
+                <div class="col-md-12 mb-4">
+                    <div class="card bg-dark text-light border-secondary snippet-card">
+                        <div class="card-header bg-dark">
+                            <h5 class="mb-0">{{ snippet.title }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>{{ snippet.description }}</p>
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="badge bg-primary">Python</span>
+                                    <button class="btn btn-sm btn-outline-light copy-button" 
+                                            data-clipboard-target="#snippet-{{ loop.index + 300 }}">
+                                        <i class="bi bi-clipboard"></i> Copy
+                                    </button>
+                                </div>
+                                <pre><code class="language-python" id="snippet-{{ loop.index + 300 }}">{{ snippet.code }}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize clipboard.js
+        var clipboard = new ClipboardJS('.copy-button');
+        
+        clipboard.on('success', function(e) {
+            var originalText = e.trigger.innerHTML;
+            e.trigger.innerHTML = '<i class="bi bi-check"></i> Copied!';
+            
+            setTimeout(function() {
+                e.trigger.innerHTML = originalText;
+            }, 2000);
+            
+            e.clearSelection();
+        });
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}
