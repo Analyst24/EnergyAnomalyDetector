@@ -1,8 +1,8 @@
 """
-Code Snippets module for the Energy Anomaly Detection System
+Code snippets blueprint for sharing code examples with users.
 """
 from flask import Blueprint
 
-code_snippets = Blueprint('code_snippets', __name__, url_prefix='/code_snippets')
+code_snippets_bp = Blueprint('code_snippets', __name__, url_prefix='/code-snippets')
 
-from . import routes
+from app.code_snippets import routes
