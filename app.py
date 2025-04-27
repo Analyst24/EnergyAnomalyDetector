@@ -115,49 +115,46 @@ if not st.session_state.db_initialized:
 
 # Function to display a background image
 def add_bg_image():
-    try:
-        background_image = Image.open('assets/energy_background.jpg')
-        bg_image = f"""
-        <style>
-        .stApp {{
-            background-image: url("data:image/jpeg;base64,{image_to_base64(background_image)}");
-            background-size: cover;
-            background-position: center;
-        }}
-        .auth-container {{
-            background-color: rgba(45, 52, 54, 0.85);
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            max-width: 450px;
-            margin: 10vh auto;
-        }}
-        .auth-header {{
-            color: white;
-            text-align: center;
-            margin-bottom: 25px;
-        }}
-        .auth-button {{
-            width: 100%;
-            margin-top: 15px;
-        }}
-        .auth-link {{
-            text-align: center;
-            margin-top: 20px;
-            color: #4b7bec;
-            cursor: pointer;
-        }}
-        .auth-link:hover {{
-            text-decoration: underline;
-        }}
-        .stButton button {{
-            width: 100%;
-        }}
-        </style>
-        """
-        st.markdown(bg_image, unsafe_allow_html=True)
-    except Exception as e:
-        st.error(f"Error loading background image: {e}")
+    # Create a dark gradient background instead of loading an image
+    bg_style = """
+    <style>
+    .stApp {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        background-size: cover;
+        background-position: center;
+    }
+    .auth-container {
+        background-color: rgba(45, 52, 54, 0.85);
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        max-width: 450px;
+        margin: 10vh auto;
+    }
+    .auth-header {
+        color: white;
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    .auth-button {
+        width: 100%;
+        margin-top: 15px;
+    }
+    .auth-link {
+        text-align: center;
+        margin-top: 20px;
+        color: #4b7bec;
+        cursor: pointer;
+    }
+    .auth-link:hover {
+        text-decoration: underline;
+    }
+    .stButton button {
+        width: 100%;
+    }
+    </style>
+    """
+    st.markdown(bg_style, unsafe_allow_html=True)
 
 # Function to convert image to base64
 def image_to_base64(image):
