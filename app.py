@@ -11,7 +11,7 @@ from streamlit_extras.colored_header import colored_header
 from streamlit_extras.app_logo import add_logo
 from streamlit_extras.switch_page_button import switch_page
 
-from utils.auth import login_user, create_user, verify_password, get_users, is_authenticated
+from utils.auth import login_user, create_user, verify_password, get_users, is_authenticated, add_user
 from styles.custom import apply_custom_styles
 
 # Page configuration
@@ -38,95 +38,138 @@ if 'selected_algorithm' not in st.session_state:
     st.session_state.selected_algorithm = "Isolation Forest"
 if 'model_metrics' not in st.session_state:
     st.session_state.model_metrics = None
+if 'show_signup' not in st.session_state:
+    st.session_state.show_signup = False
 
 # Create a sample users dictionary if it doesn't exist
 if 'users' not in st.session_state:
     st.session_state.users = {
         'admin': {
             'password': 'admin123',
-            'name': 'Administrator'
+            'name': 'Administrator',
+            'email': 'admin@example.com'
         },
         'demo': {
             'password': 'demo123',
-            'name': 'Demo User'
+            'name': 'Demo User',
+            'email': 'demo@example.com'
         }
     }
 
+# Function to display a background image
+def add_bg_image():
+    try:
+        background_image = Image.open('assets/energy_background.jpg')
+        bg_image = f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/jpeg;base64,{image_to_base64(background_image)}");
+            background-size: cover;
+            background-position: center;
+        }}
+        .auth-container {{
+            background-color: rgba(45, 52, 54, 0.85);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            margin: 10vh auto;
+        }}
+        .auth-header {{
+            color: white;
+            text-align: center;
+            margin-bottom: 25px;
+        }}
+        .auth-button {{
+            width: 100%;
+            margin-top: 15px;
+        }}
+        .auth-link {{
+            text-align: center;
+            margin-top: 20px;
+            color: #4b7bec;
+            cursor: pointer;
+        }}
+        .auth-link:hover {{
+            text-decoration: underline;
+        }}
+        .stButton button {{
+            width: 100%;
+        }}
+        </style>
+        """
+        st.markdown(bg_image, unsafe_allow_html=True)
+    except Exception as e:
+        st.error(f"Error loading background image: {e}")
+
+# Function to convert image to base64
+def image_to_base64(image):
+    import io
+    import base64
+    buffered = io.BytesIO()
+    image.save(buffered, format="JPEG")
+    return base64.b64encode(buffered.getvalue()).decode()
+
 # Login page
 def login_page():
-    st.title("⚡ Energy Anomaly Detection System")
+    # Hide the sidebar
+    st.markdown("""
+    <style>
+    [data-testid="collapsedControl"] {display: none}
+    </style>
+    """, unsafe_allow_html=True)
     
-    # Two columns layout
-    col1, col2 = st.columns([1, 1])
+    # Add background image
+    add_bg_image()
     
-    with col1:
-        st.markdown("### Login")
-        username = st.text_input("Username", key="login_username")
-        password = st.text_input("Password", type="password", key="login_password")
-        
-        login_btn = st.button("Login")
-        
-        if login_btn:
-            if username in st.session_state.users and st.session_state.users[username]['password'] == password:
-                st.session_state.authenticated = True
-                st.session_state.username = username
-                st.success(f"Welcome back, {st.session_state.users[username]['name']}!")
-                time.sleep(1)
-                st.rerun()
-            else:
-                st.error("Invalid username or password")
+    # Add container for login form
+    st.markdown('<div class="auth-container">', unsafe_allow_html=True)
+    st.markdown('<h1 class="auth-header">⚡ Energy Anomaly Detection</h1>', unsafe_allow_html=True)
     
-    with col2:
-        # Energy-related animation/visualization
-        st.markdown("### Energy Monitoring System")
+    email = st.text_input("Email", key="login_email")
+    password = st.text_input("Password", type="password", key="login_password")
+    
+    login_btn = st.button("Login", key="login_button")
+    
+    if login_btn:
+        # Find the user with matching email
+        user_found = False
+        for username, user_data in st.session_state.users.items():
+            if 'email' in user_data and user_data['email'] == email:
+                if user_data['password'] == password:
+                    st.session_state.authenticated = True
+                    st.session_state.username = username
+                    st.success(f"Welcome back, {user_data.get('name', username)}!")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("Invalid password")
+                user_found = True
+                break
         
-        # Sample energy consumption data for animation
-        dates = pd.date_range(start='2023-01-01', periods=30, freq='D')
-        energy_consumption = np.random.normal(100, 15, 30)
-        energy_df = pd.DataFrame({
-            'Date': dates,
-            'Consumption': energy_consumption
-        })
-        
-        # Create an animated line chart
-        fig = px.line(energy_df, x='Date', y='Consumption',
-                      title='Real-time Energy Consumption',
-                      labels={'Consumption': 'Energy Usage (kWh)', 'Date': 'Time'},
-                      color_discrete_sequence=['#4b7bec'])
-        
-        # Add anomaly points for visual effect
-        anomaly_indices = [5, 12, 22]
-        anomaly_dates = energy_df.iloc[anomaly_indices]['Date']
-        anomaly_values = energy_df.iloc[anomaly_indices]['Consumption']
-        
-        fig.add_trace(go.Scatter(
-            x=anomaly_dates,
-            y=anomaly_values,
-            mode='markers',
-            marker=dict(size=12, color='red', symbol='circle'),
-            name='Potential Anomalies'
-        ))
-        
-        # Update layout for dark theme
-        fig.update_layout(
-            plot_bgcolor='rgba(30, 39, 46, 0.8)',
-            paper_bgcolor='rgba(30, 39, 46, 0)',
-            font=dict(color='white'),
-            xaxis=dict(gridcolor='rgba(255, 255, 255, 0.1)'),
-            yaxis=dict(gridcolor='rgba(255, 255, 255, 0.1)'),
-            margin=dict(l=20, r=20, t=50, b=20),
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
-            )
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-        
-        st.info("This system helps detect energy consumption anomalies using advanced machine learning algorithms.")
+        if not user_found:
+            st.error("Email not found. Please sign up if you don't have an account.")
+    
+    # Link to sign up page
+    st.markdown('<div class="auth-link" id="signup-link">Don\'t have an account? Sign up</div>', unsafe_allow_html=True)
+    
+    # JavaScript to handle the sign up link click
+    st.markdown("""
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelector('#signup-link').addEventListener('click', function() {
+            window.parent.postMessage({type: 'streamlit:setComponentValue', value: true}, '*');
+        });
+    });
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # Check if signup link was clicked
+    if st.button("Sign Up", key="goto_signup", help="Create a new account"):
+        st.session_state.show_signup = True
+        st.rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Get Started page
 def get_started_page():
@@ -210,10 +253,68 @@ def get_started_page():
         if st.button("Go to Dashboard", key="goto_dashboard", use_container_width=True):
             switch_page("Home")
 
+# Sign up page
+def signup_page():
+    # Hide the sidebar
+    st.markdown("""
+    <style>
+    [data-testid="collapsedControl"] {display: none}
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Add background image
+    add_bg_image()
+    
+    # Add container for signup form
+    st.markdown('<div class="auth-container">', unsafe_allow_html=True)
+    st.markdown('<h1 class="auth-header">⚡ Create Account</h1>', unsafe_allow_html=True)
+    
+    full_name = st.text_input("Full Name", key="signup_name")
+    email = st.text_input("Email", key="signup_email")
+    username = st.text_input("Username", key="signup_username")
+    password = st.text_input("Password", type="password", key="signup_password")
+    confirm_password = st.text_input("Confirm Password", type="password", key="signup_confirm_password")
+    
+    signup_btn = st.button("Sign Up", key="signup_button")
+    
+    if signup_btn:
+        # Validate form
+        if not (full_name and email and username and password and confirm_password):
+            st.error("All fields are required.")
+        elif password != confirm_password:
+            st.error("Passwords do not match.")
+        elif username in st.session_state.users:
+            st.error("Username already exists. Please choose another one.")
+        elif any(user_data.get('email') == email for user_data in st.session_state.users.values()):
+            st.error("Email already registered. Please use another email or login.")
+        else:
+            # Add the new user
+            add_user(username, password, full_name, role="User")
+            # Add email to user data
+            st.session_state.users[username]['email'] = email
+            
+            st.success("Account created successfully! You can now log in.")
+            st.session_state.show_signup = False
+            time.sleep(1)
+            st.rerun()
+    
+    # Link to login page
+    st.markdown('<div class="auth-link" id="login-link">Already have an account? Log In</div>', unsafe_allow_html=True)
+    
+    # Button to go back to login
+    if st.button("Back to Login", key="goto_login"):
+        st.session_state.show_signup = False
+        st.rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
 # Main app logic
 def main():
     if not st.session_state.authenticated:
-        login_page()
+        if st.session_state.show_signup:
+            signup_page()
+        else:
+            login_page()
     else:
         # Create sidebar
         with st.sidebar:
@@ -228,9 +329,10 @@ def main():
         # Main content
         get_started_page()
     
-    # Footer with copyright
-    st.markdown("---")
-    st.markdown("© 2025 Opulent Chikwiramakomo. All rights reserved.")
+    # Only show footer when authenticated
+    if st.session_state.authenticated:
+        st.markdown("---")
+        st.markdown("© 2025 Opulent Chikwiramakomo. All rights reserved.")
 
 if __name__ == "__main__":
     main()
