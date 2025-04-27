@@ -134,7 +134,7 @@ def run_detection():
                 }
                 
                 # Run Isolation Forest algorithm
-                anomalies, scores = run_isolation_forest(df, parameters)
+                anomalies, scores = run_isolation_forest(df, params=parameters)
                 
             elif algorithm == 'autoencoder':
                 # AutoEncoder parameters
@@ -144,7 +144,7 @@ def run_detection():
                 }
                 
                 # Run AutoEncoder algorithm
-                anomalies, scores = run_autoencoder(df, parameters)
+                anomalies, scores = run_autoencoder(df, params=parameters)
                 
             elif algorithm == 'kmeans':
                 # K-Means parameters
@@ -154,7 +154,7 @@ def run_detection():
                 }
                 
                 # Run K-Means algorithm
-                anomalies, scores = run_kmeans(df, parameters)
+                anomalies, scores = run_kmeans(df, params=parameters)
                 
             else:
                 flash('Invalid algorithm selected', 'danger')

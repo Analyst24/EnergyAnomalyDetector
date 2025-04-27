@@ -1,99 +1,102 @@
 """
-K-Means Clustering model for anomaly detection in energy consumption.
+K-Means clustering anomaly detection algorithm for the Energy Anomaly Detection System.
 """
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
-import time
+from scipy.spatial.distance import cdist
 
-def run_kmeans(data, feature_columns, params):
+def run_kmeans(df, params=None):
     """
-    Run K-Means anomaly detection algorithm on the given data.
+    Run K-Means clustering algorithm on the dataset.
     
-    Parameters:
-        data (DataFrame): The dataset for anomaly detection
-        feature_columns (list): List of columns to use as features
-        params (dict): Parameters for the algorithm
-    
+    Args:
+        df (pandas.DataFrame): The dataset to analyze
+        params (dict, optional): Algorithm parameters
+        
     Returns:
-        tuple: (result_data, model_info)
+        tuple: (anomaly_indices, anomaly_scores)
     """
-    # Start tracking execution time
-    start_time = time.time()
+    # Set default parameters if not provided
+    if params is None:
+        params = {
+            'n_clusters': 5,
+            'threshold_percentile': 95
+        }
     
-    # Extract parameters
-    n_clusters = params.get("n_clusters", 5)
-    threshold_percent = params.get("threshold_percent", 95)
+    n_clusters = params.get('n_clusters', 5)
+    threshold_percentile = params.get('threshold_percentile', 95)
     
-    # Create a copy of the input data
-    result_data = data.copy()
+    # Extract features for anomaly detection
+    feature_cols = []
+    
+    # Use consumption as a feature
+    if 'consumption' in df.columns:
+        feature_cols.append('consumption')
+    
+    # Use temperature as a feature if available
+    if 'temperature' in df.columns:
+        feature_cols.append('temperature')
+    
+    # Use humidity as a feature if available
+    if 'humidity' in df.columns:
+        feature_cols.append('humidity')
+    
+    # If we have timestamp, add time-based features
+    if 'timestamp' in df.columns and pd.api.types.is_datetime64_any_dtype(df['timestamp']):
+        # Extract hour of day
+        df['hour'] = df['timestamp'].dt.hour
+        feature_cols.append('hour')
+        
+        # Extract day of week
+        df['day_of_week'] = df['timestamp'].dt.dayofweek
+        feature_cols.append('day_of_week')
+    
+    # Ensure we have at least one feature
+    if not feature_cols:
+        # If no specific features, use all numeric columns
+        feature_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     
     # Prepare features
-    X = result_data[feature_columns].values
+    X = df[feature_cols].copy()
     
-    # Normalize features
+    # Handle missing values
+    X = X.fillna(X.mean())
+    
+    # Scale features
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     
-    # Initialize and train the K-Means model
-    model = KMeans(
+    # Ensure we don't have more clusters than data points
+    n_clusters = min(n_clusters, len(X_scaled) - 1)
+    
+    # If we have very few data points, reduce to a simple approach
+    if n_clusters < 2:
+        n_clusters = 2
+    
+    # Train the model
+    kmeans = KMeans(
         n_clusters=n_clusters,
         random_state=42,
-        n_init=10  # Number of times to run the algorithm with different initializations
+        n_init=10
     )
+    kmeans.fit(X_scaled)
     
-    # Fit the model and get cluster assignments
-    cluster_labels = model.fit_predict(X_scaled)
-    result_data['cluster'] = cluster_labels
+    # Get cluster assignments
+    clusters = kmeans.predict(X_scaled)
     
-    # Get the centroids
-    centroids = model.cluster_centers_
-    
-    # Calculate distance to the nearest centroid for each point
+    # Calculate distance to assigned cluster center
     distances = np.zeros(len(X_scaled))
-    
     for i in range(len(X_scaled)):
-        # Get the assigned cluster for this point
-        cluster = cluster_labels[i]
-        
-        # Calculate Euclidean distance to the centroid
-        distances[i] = np.linalg.norm(X_scaled[i] - centroids[cluster])
+        cluster_idx = clusters[i]
+        distances[i] = np.linalg.norm(X_scaled[i] - kmeans.cluster_centers_[cluster_idx])
     
-    # Store distances
-    result_data['distance_to_centroid'] = distances
+    # Determine threshold for anomalies
+    threshold = np.percentile(distances, threshold_percentile)
     
-    # Use distance as anomaly score
-    result_data['anomaly_score'] = distances
+    # Identify anomalies
+    anomaly_mask = distances > threshold
+    anomaly_indices = np.where(anomaly_mask)[0]
     
-    # Use the specified percentile as threshold
-    threshold = np.percentile(distances, threshold_percent)
-    
-    # Flag anomalies based on the threshold
-    result_data['is_anomaly'] = (distances > threshold).astype(int)
-    
-    # Calculate cluster distribution
-    cluster_distribution = {}
-    for i in range(n_clusters):
-        cluster_distribution[f"Cluster {i}"] = np.sum(cluster_labels == i)
-    
-    # Calculate execution time
-    execution_time = time.time() - start_time
-    
-    # Prepare model info
-    model_info = {
-        "algorithm": "K-Means Clustering",
-        "n_clusters": n_clusters,
-        "threshold_percent": threshold_percent,
-        "threshold": threshold,
-        "execution_time": execution_time,
-        "cluster_distribution": cluster_distribution,
-        "performance_metrics": {
-            "AUC": 0.87,  # These are placeholder values for the demo
-            "precision": 0.80,
-            "recall": 0.75,
-            "f1_score": 0.77
-        }
-    }
-    
-    return result_data, model_info
+    return anomaly_indices, distances

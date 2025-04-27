@@ -2,84 +2,151 @@
 
 {% block title %}Sign Up | Energy Anomaly Detection{% endblock %}
 
-{% block auth_content %}
-<div class="auth-card">
-    <div class="auth-header">
-        <div class="logo">⚡</div>
-        <h2>Create Account</h2>
-        <p class="text-muted">Sign up for a new account</p>
+{% block content %}
+<div class="auth-container">
+    <div class="card auth-card">
+        <div class="card-body p-4">
+            <div class="auth-header">
+                <div class="auth-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <h1 class="h3">Create Account</h1>
+                <p class="text-muted">Sign up for a new account</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.signup') }}">
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-3">
+                    <label for="full_name" class="form-label">Full Name</label>
+                    {{ form.full_name(class="form-control", id="full_name", placeholder="Enter your full name") }}
+                    {% if form.full_name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.full_name.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email Address</label>
+                    {{ form.email(class="form-control", id="email", placeholder="Enter your email address") }}
+                    {% if form.email.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.email.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    {{ form.username(class="form-control", id="username", placeholder="Choose a username") }}
+                    {% if form.username.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.username.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="input-group">
+                        {{ form.password(class="form-control", id="password", placeholder="Create a password") }}
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    {% if form.password.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.password.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                    <div class="input-group">
+                        {{ form.confirm_password(class="form-control", id="confirm_password", placeholder="Confirm your password") }}
+                        <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    {% if form.confirm_password.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.confirm_password.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-grid gap-2">
+                    {{ form.submit(class="btn btn-primary btn-lg") }}
+                </div>
+                
+                <div class="text-center mt-4">
+                    <p>Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
+                </div>
+            </form>
+        </div>
     </div>
     
-    <form method="POST" action="{{ url_for('auth.signup') }}">
-        {{ form.hidden_tag() }}
-        
-        <div class="mb-3">
-            <label for="full_name" class="form-label">Full Name</label>
-            {{ form.full_name(class="form-control", id="full_name", placeholder="Enter your full name") }}
-            {% if form.full_name.errors %}
-                <div class="invalid-feedback d-block">
-                    {% for error in form.full_name.errors %}
-                        {{ error }}
-                    {% endfor %}
-                </div>
-            {% endif %}
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="mb-3">Password Requirements</h5>
+            <ul class="mb-0">
+                <li>At least 6 characters long</li>
+                <li>Mix of letters, numbers, and special characters recommended</li>
+            </ul>
         </div>
-        
-        <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            {{ form.email(class="form-control", id="email", placeholder="Enter your email") }}
-            {% if form.email.errors %}
-                <div class="invalid-feedback d-block">
-                    {% for error in form.email.errors %}
-                        {{ error }}
-                    {% endfor %}
-                </div>
-            {% endif %}
-        </div>
-        
-        <div class="mb-3">
-            <label for="username" class="form-label">Username</label>
-            {{ form.username(class="form-control", id="username", placeholder="Choose a username") }}
-            {% if form.username.errors %}
-                <div class="invalid-feedback d-block">
-                    {% for error in form.username.errors %}
-                        {{ error }}
-                    {% endfor %}
-                </div>
-            {% endif %}
-        </div>
-        
-        <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
-            {{ form.password(class="form-control", id="password", placeholder="Create a password") }}
-            {% if form.password.errors %}
-                <div class="invalid-feedback d-block">
-                    {% for error in form.password.errors %}
-                        {{ error }}
-                    {% endfor %}
-                </div>
-            {% endif %}
-        </div>
-        
-        <div class="mb-3">
-            <label for="confirm_password" class="form-label">Confirm Password</label>
-            {{ form.confirm_password(class="form-control", id="confirm_password", placeholder="Confirm your password") }}
-            {% if form.confirm_password.errors %}
-                <div class="invalid-feedback d-block">
-                    {% for error in form.confirm_password.errors %}
-                        {{ error }}
-                    {% endfor %}
-                </div>
-            {% endif %}
-        </div>
-        
-        <div class="d-grid gap-2">
-            {{ form.submit(class="btn btn-primary btn-lg") }}
-        </div>
-    </form>
-    
-    <div class="auth-link mt-4">
-        <a href="{{ url_for('auth.login') }}">Already have an account? Log in</a>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle password visibility
+        const togglePassword = document.getElementById('togglePassword');
+        const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm_password');
+        
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // toggle the eye icon
+            const icon = togglePassword.querySelector('i');
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+        });
+        
+        toggleConfirmPassword.addEventListener('click', function() {
+            const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            confirmPasswordInput.setAttribute('type', type);
+            
+            // toggle the eye icon
+            const icon = toggleConfirmPassword.querySelector('i');
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+        });
+        
+        // Check if passwords match while typing
+        confirmPasswordInput.addEventListener('input', function() {
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                confirmPasswordInput.setCustomValidity('Passwords do not match');
+            } else {
+                confirmPasswordInput.setCustomValidity('');
+            }
+        });
+    });
+</script>
 {% endblock %}

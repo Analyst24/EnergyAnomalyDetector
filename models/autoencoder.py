@@ -1,90 +1,147 @@
 """
-AutoEncoder model for anomaly detection in energy consumption using scikit-learn.
+AutoEncoder anomaly detection algorithm for the Energy Anomaly Detection System.
 """
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
-from sklearn.pipeline import Pipeline
-import time
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.optimizers import Adam
+import logging
 
-def run_autoencoder(data, feature_columns, params):
+def run_autoencoder(df, params=None):
     """
-    Run PCA-based dimensionality reduction as an alternative to deep learning autoencoder.
-    This is a simpler model that doesn't require TensorFlow.
+    Run AutoEncoder algorithm on the dataset.
     
-    Parameters:
-        data (DataFrame): The dataset for anomaly detection
-        feature_columns (list): List of columns to use as features
-        params (dict): Parameters for the algorithm
-    
+    Args:
+        df (pandas.DataFrame): The dataset to analyze
+        params (dict, optional): Algorithm parameters
+        
     Returns:
-        tuple: (result_data, model_info)
+        tuple: (anomaly_indices, anomaly_scores)
     """
-    # Start tracking execution time
-    start_time = time.time()
+    # Set default parameters if not provided
+    if params is None:
+        params = {
+            'threshold_percentile': 95,
+            'components': 2,
+            'epochs': 50,
+            'batch_size': 32,
+            'learning_rate': 0.001
+        }
     
-    # Extract parameters
-    threshold_percent = params.get("threshold_percent", 95)
-    n_components = params.get("n_components", 2)  # Number of PCA components to use
+    threshold_percentile = params.get('threshold_percentile', 95)
+    components = params.get('components', 2)
+    epochs = params.get('epochs', 50)
+    batch_size = params.get('batch_size', 32)
+    learning_rate = params.get('learning_rate', 0.001)
     
-    # Create a copy of the input data
-    result_data = data.copy()
+    # Extract features for anomaly detection
+    feature_cols = []
+    
+    # Use consumption as a feature
+    if 'consumption' in df.columns:
+        feature_cols.append('consumption')
+    
+    # Use temperature as a feature if available
+    if 'temperature' in df.columns:
+        feature_cols.append('temperature')
+    
+    # Use humidity as a feature if available
+    if 'humidity' in df.columns:
+        feature_cols.append('humidity')
+    
+    # If we have timestamp, add time-based features
+    if 'timestamp' in df.columns and pd.api.types.is_datetime64_any_dtype(df['timestamp']):
+        # Extract hour of day
+        df['hour'] = df['timestamp'].dt.hour
+        feature_cols.append('hour')
+        
+        # Extract day of week
+        df['day_of_week'] = df['timestamp'].dt.dayofweek
+        feature_cols.append('day_of_week')
+    
+    # Ensure we have at least one feature
+    if not feature_cols:
+        # If no specific features, use all numeric columns
+        feature_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     
     # Prepare features
-    X = result_data[feature_columns].values
+    X = df[feature_cols].copy()
     
-    # PCA as a dimensionality reduction method (like an encoder-decoder)
-    n_features = X.shape[1]
-    n_components = min(n_features - 1, n_components)  # Ensure n_components is valid
+    # Handle missing values
+    X = X.fillna(X.mean())
     
-    # Set random seed for reproducibility
-    np.random.seed(42)
+    # Scale features
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
     
-    # PCA pipeline with standardization
-    pca_pipeline = Pipeline([
-        ('scaler', StandardScaler()),
-        ('pca', PCA(n_components=n_components, random_state=42))
-    ])
+    # Input dimension
+    input_dim = X_scaled.shape[1]
     
-    # Fit the pipeline and transform the data
-    X_reduced = pca_pipeline.fit_transform(X)
+    # Limit component dimension
+    encoding_dim = min(components, input_dim)
     
-    # Inverse transform to reconstruct the original data
-    X_reconstructed = pca_pipeline.inverse_transform(X_reduced)
-    
-    # Calculate reconstruction error for each data point
-    reconstruction_errors = np.mean(np.square(X - X_reconstructed), axis=1)
-    
-    # Store reconstruction errors
-    result_data['reconstruction_error'] = reconstruction_errors
-    
-    # Use the specified percentile as threshold
-    threshold = np.percentile(reconstruction_errors, threshold_percent)
-    
-    # Flag anomalies based on the threshold
-    result_data['is_anomaly'] = (reconstruction_errors > threshold).astype(int)
-    
-    # Use reconstruction error as anomaly score
-    result_data['anomaly_score'] = reconstruction_errors
-    
-    # Calculate execution time
-    execution_time = time.time() - start_time
-    
-    # Prepare model info
-    model_info = {
-        "algorithm": "PCA-based Autoencoder",
-        "threshold_percent": threshold_percent,
-        "n_components": n_components,
-        "threshold": threshold,
-        "execution_time": execution_time,
-        "variance_explained": np.sum(pca_pipeline.named_steps['pca'].explained_variance_ratio_),
-        "performance_metrics": {
-            "AUC": 0.87,  # These are placeholder values for the demo
-            "precision": 0.80,
-            "recall": 0.78,
-            "f1_score": 0.79
-        }
-    }
-    
-    return result_data, model_info
+    # Build the model
+    try:
+        # Suppress TensorFlow info and warning messages
+        tf.get_logger().setLevel('ERROR')
+        logging.getLogger('tensorflow').setLevel(logging.ERROR)
+        
+        # Build the autoencoder model
+        model = Sequential([
+            Input(shape=(input_dim,)),
+            Dense(input_dim, activation='relu'),
+            Dense(encoding_dim, activation='relu'),
+            Dense(input_dim, activation='sigmoid')
+        ])
+        
+        # Compile the model
+        model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mean_squared_error')
+        
+        # Train the model
+        model.fit(
+            X_scaled, X_scaled,
+            epochs=epochs,
+            batch_size=batch_size,
+            shuffle=True,
+            verbose=0
+        )
+        
+        # Get reconstruction error
+        reconstructions = model.predict(X_scaled, verbose=0)
+        mse = np.mean(np.power(X_scaled - reconstructions, 2), axis=1)
+        
+        # Determine threshold for anomalies
+        threshold = np.percentile(mse, threshold_percentile)
+        
+        # Identify anomalies
+        anomaly_mask = mse > threshold
+        anomaly_indices = np.where(anomaly_mask)[0]
+        
+        return anomaly_indices, mse
+        
+    except Exception as e:
+        # In case of TF errors, fall back to a simpler approach
+        logging.error(f"AutoEncoder error: {str(e)}")
+        
+        # Fall back to a simpler approach
+        from sklearn.decomposition import PCA
+        
+        # Use PCA as a fallback
+        pca = PCA(n_components=min(encoding_dim, input_dim))
+        X_pca = pca.fit_transform(X_scaled)
+        X_reconstructed = pca.inverse_transform(X_pca)
+        
+        # Calculate reconstruction error
+        mse = np.mean(np.power(X_scaled - X_reconstructed, 2), axis=1)
+        
+        # Determine threshold for anomalies
+        threshold = np.percentile(mse, threshold_percentile)
+        
+        # Identify anomalies
+        anomaly_mask = mse > threshold
+        anomaly_indices = np.where(anomaly_mask)[0]
+        
+        return anomaly_indices, mse
