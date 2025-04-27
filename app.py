@@ -398,25 +398,8 @@ def main():
     else:
         # Create sidebar
         with st.sidebar:
-            # Professional sidebar with user info section
-            # User profile section
-            user_col1, user_col2 = st.columns([1, 3])
-            
-            with user_col1:
-                # User avatar/icon
-                st.markdown("""
-                <div style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg, #4b7bec 0%, #3867d6 100%);display:flex;align-items:center;justify-content:center;color:white;font-size:24px;font-weight:bold;">
-                    {}
-                </div>
-                """.format(st.session_state.username[0].upper()), unsafe_allow_html=True)
-                
-            with user_col2:
-                st.markdown(f"### {st.session_state.username}")
-                st.markdown("<span style='color:#a5b1c2;font-size:14px;'>Energy Analyst</span>", unsafe_allow_html=True)
-            
-            st.markdown("---")
-            
-            # Professional sidebar styling
+            # Professional sidebar with just user info and logout
+            # Add professional styling
             st.markdown("""
             <style>
             /* Hide default elements */
@@ -432,179 +415,89 @@ def main():
                 position: absolute !important;
             }
             
-            /* Professional menu styling */
-            .sidebar-menu {
-                margin-bottom: 20px;
+            /* Professional sidebar styling */
+            .sidebar-container {
+                padding: 20px 0;
             }
             
-            .menu-title {
-                font-size: 14px;
-                color: #a5b1c2;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-                margin-bottom: 10px;
-                font-weight: 500;
-            }
-            
-            .menu-item {
+            .user-profile {
                 display: flex;
                 align-items: center;
-                padding: 8px 12px;
-                margin: 4px 0;
-                border-radius: 5px;
-                color: #f0f0f0;
-                text-decoration: none;
-                transition: background-color 0.2s;
-                cursor: pointer;
+                margin-bottom: 30px;
             }
             
-            .menu-item:hover {
-                background-color: rgba(75, 123, 236, 0.2);
+            .user-avatar {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #4b7bec 0%, #3867d6 100%);
+                color: white;
+                font-size: 24px;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-right: 15px;
             }
             
-            .menu-item.active {
-                background-color: rgba(75, 123, 236, 0.3);
-                font-weight: 500;
+            .user-info {
+                display: flex;
+                flex-direction: column;
             }
             
-            .menu-icon {
-                margin-right: 10px;
-                width: 20px;
-                text-align: center;
+            .user-name {
                 font-size: 18px;
+                font-weight: 600;
+                color: #f0f0f0;
+                margin-bottom: 5px;
+            }
+            
+            .user-role {
+                font-size: 14px;
+                color: #a5b1c2;
+            }
+            
+            .sidebar-divider {
+                height: 1px;
+                background-color: rgba(255, 255, 255, 0.1);
+                margin: 20px 0;
+            }
+            
+            .app-info {
+                margin-top: auto;
+                padding: 20px 0;
+                text-align: center;
+                color: #a5b1c2;
+                font-size: 12px;
             }
             
             .logout-button {
                 margin-top: 30px;
-                text-align: center;
             }
             </style>
             """, unsafe_allow_html=True)
             
-            # Main navigation menu
-            st.markdown('<div class="sidebar-menu">', unsafe_allow_html=True)
-            st.markdown('<div class="menu-title">MAIN NAVIGATION</div>', unsafe_allow_html=True)
-            
-            # Menu items for the main navigation section
-            menu_items = [
-                {"name": "Dashboard", "icon": "📊", "page": "02_Dashboard"},
-                {"name": "Upload Data", "icon": "📤", "page": "03_Upload_Data"},
-                {"name": "Run Detection", "icon": "🔍", "page": "04_Run_Detection"}
-            ]
-            
-            # Create JavaScript navigation function
+            # User profile section
             st.markdown("""
-            <script>
-            function navigateTo(page) {
-                // Navigate to the page
-                window.location.href = page;
-            }
-            </script>
-            """, unsafe_allow_html=True)
-            
-            # Create buttons with onClick JavaScript navigation
-            for i, item in enumerate(menu_items):
-                btn_id = f"nav_btn_{i}"
-                st.markdown(f"""
-                <button 
-                    id="{btn_id}" 
-                    style="
-                        width: 100%; 
-                        padding: 8px 12px; 
-                        margin: 4px 0;
-                        background-color: rgba(75, 123, 236, 0.1);
-                        color: #f0f0f0;
-                        border: none;
-                        border-radius: 5px;
-                        cursor: pointer;
-                        text-align: left;
-                        display: flex;
-                        align-items: center;
-                        transition: background-color 0.2s;
-                    "
-                    onmouseover="this.style.backgroundColor='rgba(75, 123, 236, 0.3)';"
-                    onmouseout="this.style.backgroundColor='rgba(75, 123, 236, 0.1)';"
-                    onclick="navigateTo('{item['page']}')">
-                    <span style="margin-right: 10px; width: 20px; text-align: center;">{item['icon']}</span>
-                    <span>{item['name']}</span>
-                </button>
-                """, unsafe_allow_html=True)
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            # Analysis & Reports section
-            st.markdown('<div class="sidebar-menu">', unsafe_allow_html=True)
-            st.markdown('<div class="menu-title">ANALYSIS & REPORTS</div>', unsafe_allow_html=True)
-            
-            # Analysis menu items
-            analysis_items = [
-                {"name": "Results", "icon": "📈", "page": "05_Results"},
-                {"name": "Model Insights", "icon": "💡", "page": "06_Model_Insights"},
-                {"name": "Recommendations", "icon": "📋", "page": "07_Recommendations"}
-            ]
-            
-            # Create buttons with onClick JavaScript navigation for analysis items
-            for i, item in enumerate(analysis_items):
-                btn_id = f"analysis_btn_{i}"
-                st.markdown(f"""
-                <button 
-                    id="{btn_id}" 
-                    style="
-                        width: 100%; 
-                        padding: 8px 12px; 
-                        margin: 4px 0;
-                        background-color: rgba(75, 123, 236, 0.1);
-                        color: #f0f0f0;
-                        border: none;
-                        border-radius: 5px;
-                        cursor: pointer;
-                        text-align: left;
-                        display: flex;
-                        align-items: center;
-                        transition: background-color 0.2s;
-                    "
-                    onmouseover="this.style.backgroundColor='rgba(75, 123, 236, 0.3)';"
-                    onmouseout="this.style.backgroundColor='rgba(75, 123, 236, 0.1)';"
-                    onclick="navigateTo('{item['page']}')">
-                    <span style="margin-right: 10px; width: 20px; text-align: center;">{item['icon']}</span>
-                    <span>{item['name']}</span>
-                </button>
-                """, unsafe_allow_html=True)
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            # System section
-            st.markdown('<div class="sidebar-menu">', unsafe_allow_html=True)
-            st.markdown('<div class="menu-title">SYSTEM</div>', unsafe_allow_html=True)
-            
-            # System menu items with JavaScript navigation
-            settings_btn_id = "settings_btn"
-            st.markdown(f"""
-            <button 
-                id="{settings_btn_id}" 
-                style="
-                    width: 100%; 
-                    padding: 8px 12px; 
-                    margin: 4px 0;
-                    background-color: rgba(75, 123, 236, 0.1);
-                    color: #f0f0f0;
-                    border: none;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    text-align: left;
-                    display: flex;
-                    align-items: center;
-                    transition: background-color 0.2s;
-                "
-                onmouseover="this.style.backgroundColor='rgba(75, 123, 236, 0.3)';"
-                onmouseout="this.style.backgroundColor='rgba(75, 123, 236, 0.1)';"
-                onclick="navigateTo('08_Settings')">
-                <span style="margin-right: 10px; width: 20px; text-align: center;">⚙️</span>
-                <span>Settings</span>
-            </button>
-            """, unsafe_allow_html=True)
-            
-            st.markdown('</div>', unsafe_allow_html=True)
+            <div class="sidebar-container">
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        {}
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name">{}</div>
+                        <div class="user-role">Energy Analyst</div>
+                    </div>
+                </div>
+                
+                <div class="sidebar-divider"></div>
+                
+                <div class="app-info">
+                    <div>Energy Anomaly Detection System</div>
+                    <div>Version 2.5.0</div>
+                </div>
+            </div>
+            """.format(st.session_state.username[0].upper(), st.session_state.username), unsafe_allow_html=True)
             
             # Logout button (using Streamlit's button for functionality)
             st.markdown('<div class="logout-button">', unsafe_allow_html=True)
