@@ -367,73 +367,34 @@ def main():
     else:
         # Create sidebar
         with st.sidebar:
-            st.markdown(f"### Welcome, {st.session_state.username}")
+            # Clean and simple sidebar with just welcome message and logout
+            st.markdown(f"### 👋 Welcome, {st.session_state.username}!")
             st.markdown("---")
             
-            # Create a completely custom navigation menu
-            st.markdown("### 📚 Navigation Menu")
-            
-            # Custom CSS to style our navigation menu
+            # Hide default sidebar nav and other UI elements
             st.markdown("""
             <style>
-            /* Hide default sidebar nav and other UI elements */
             #MainMenu {visibility: hidden !important;}
             footer {visibility: hidden !important;}
             .stDeployButton {display: none !important;}
             
-            /* Style our custom navigation menu */
-            .nav-link {
-                padding: 10px 15px;
-                border-radius: 5px;
-                background-color: rgba(75, 123, 236, 0.1);
-                color: #f0f0f0;
-                text-decoration: none;
-                margin-bottom: 8px;
-                display: flex;
-                align-items: center;
-                transition: background-color 0.3s;
-            }
-            
-            .nav-link:hover {
-                background-color: rgba(75, 123, 236, 0.3);
-            }
-            
-            .nav-link.active {
-                background-color: rgba(75, 123, 236, 0.5);
-                font-weight: bold;
-            }
-            
-            .nav-icon {
-                margin-right: 10px;
-                font-size: 1.2rem;
+            /* Ensure the default sidebar navigation is hidden */
+            div[data-testid="stSidebarNav"] {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                position: absolute !important;
             }
             </style>
             """, unsafe_allow_html=True)
             
-            # Define our navigation items
-            nav_items = [
-                {"name": "Dashboard", "icon": "📊", "url": "/pages/02_Dashboard.py"},
-                {"name": "Upload Data", "icon": "📤", "url": "/pages/03_Upload_Data.py"},
-                {"name": "Run Detection", "icon": "🔍", "url": "/pages/04_Run_Detection.py"},
-                {"name": "Results", "icon": "📈", "url": "/pages/05_Results.py"},
-                {"name": "Model Insights", "icon": "💡", "url": "/pages/06_Model_Insights.py"},
-                {"name": "Recommendations", "icon": "🔄", "url": "/pages/07_Recommendations.py"},
-                {"name": "Settings", "icon": "⚙️", "url": "/pages/08_Settings.py"}
-            ]
+            # Add a little space for better layout
+            st.write("")
+            st.write("")
+            st.write("")
             
-            # Create clickable navigation links
-            for item in nav_items:
-                nav_link = f"""
-                <a href="{item['url']}" target="_self" class="nav-link">
-                    <span class="nav-icon">{item['icon']}</span> {item['name']}
-                </a>
-                """
-                st.markdown(nav_link, unsafe_allow_html=True)
-            
-            st.markdown("---")
-            
-            # Logout button
-            if st.button("Logout"):
+            # Logout button with prominent style
+            if st.button("📤 Logout", use_container_width=True):
                 # Use the logout_user function from auth.py
                 logout_user()
                 st.rerun()
