@@ -149,17 +149,15 @@ import numpy as np
 
 # Resample energy data to a different frequency
 def resample_energy_data(df, frequency='1H', aggregation='mean'):
-    """
-    Resample time series energy data to a different frequency.
-    
-    Parameters:
-        df: DataFrame with DatetimeIndex
-        frequency: Target frequency ('1H', '1D', '1W', etc.)
-        aggregation: Aggregation method ('mean', 'sum', 'max', etc.)
-    
-    Returns:
-        Resampled DataFrame
-    """
+    # Resample time series energy data to a different frequency.
+    #
+    # Parameters:
+    #    df: DataFrame with DatetimeIndex
+    #    frequency: Target frequency ('1H', '1D', '1W', etc.)
+    #    aggregation: Aggregation method ('mean', 'sum', 'max', etc.)
+    #
+    # Returns:
+    #    Resampled DataFrame
     if not isinstance(df.index, pd.DatetimeIndex):
         raise ValueError("DataFrame index must be a DatetimeIndex")
     
@@ -192,9 +190,7 @@ from datetime import datetime
 
 # Create time-based features for energy data
 def create_time_features(df):
-    """
-    Create time-based features from datetime index
-    """
+    # Create time-based features from datetime index
     # Make a copy of the dataframe
     result = df.copy()
     
@@ -255,18 +251,16 @@ from sklearn.ensemble import IsolationForest
 import matplotlib.pyplot as plt
 
 def detect_anomalies_isolation_forest(df, feature_columns, n_estimators=100, contamination=0.05):
-    """
-    Detect anomalies in energy data using Isolation Forest algorithm
-    
-    Parameters:
-        df: DataFrame with energy data
-        feature_columns: List of columns to use for anomaly detection
-        n_estimators: Number of trees in the forest
-        contamination: Expected proportion of anomalies in the dataset
-        
-    Returns:
-        DataFrame with added anomaly scores and labels
-    """
+    # Detect anomalies in energy data using Isolation Forest algorithm
+    #
+    # Parameters:
+    #    df: DataFrame with energy data
+    #    feature_columns: List of columns to use for anomaly detection
+    #    n_estimators: Number of trees in the forest
+    #    contamination: Expected proportion of anomalies in the dataset
+    #
+    # Returns:
+    #    DataFrame with added anomaly scores and labels
     # Create a copy of the input dataframe
     result_df = df.copy()
     
@@ -318,18 +312,16 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 
 def detect_anomalies_dbscan(df, feature_columns, eps=0.5, min_samples=5):
-    """
-    Detect anomalies in energy data using DBSCAN clustering
-    
-    Parameters:
-        df: DataFrame with energy data
-        feature_columns: List of columns to use for anomaly detection
-        eps: Maximum distance between samples for them to be considered as in the same neighborhood
-        min_samples: Minimum number of samples in a neighborhood for a point to be a core point
-        
-    Returns:
-        DataFrame with added cluster labels (-1 for outliers/anomalies)
-    """
+    # Detect anomalies in energy data using DBSCAN clustering
+    #
+    # Parameters:
+    #    df: DataFrame with energy data
+    #    feature_columns: List of columns to use for anomaly detection
+    #    eps: Maximum distance between samples for them to be considered as in the same neighborhood
+    #    min_samples: Minimum number of samples in a neighborhood for a point to be a core point
+    #
+    # Returns:
+    #    DataFrame with added cluster labels (-1 for outliers/anomalies)
     # Create a copy of the input dataframe
     result_df = df.copy()
     
@@ -382,17 +374,15 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 def plot_energy_consumption_with_anomalies(df, value_column='consumption', anomaly_column='is_anomaly'):
-    """
-    Plot energy consumption with highlighted anomalies using Plotly
-    
-    Parameters:
-        df: DataFrame with energy data, anomaly indicators, and DatetimeIndex
-        value_column: Name of the column containing consumption values
-        anomaly_column: Name of the column containing anomaly indicators (1 for anomalies)
-        
-    Returns:
-        Plotly figure object
-    """
+    # Plot energy consumption with highlighted anomalies using Plotly
+    #
+    # Parameters:
+    #    df: DataFrame with energy data, anomaly indicators, and DatetimeIndex
+    #    value_column: Name of the column containing consumption values
+    #    anomaly_column: Name of the column containing anomaly indicators (1 for anomalies)
+    #
+    # Returns:
+    #    Plotly figure object
     # Create a new figure
     fig = go.Figure()
     
@@ -480,17 +470,15 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 def create_anomaly_analysis_dashboard(df, value_column='consumption', anomaly_column='is_anomaly'):
-    """
-    Create a comprehensive anomaly analysis dashboard with multiple visualizations
-    
-    Parameters:
-        df: DataFrame with energy data, anomaly indicators, and DatetimeIndex
-        value_column: Name of the column containing consumption values
-        anomaly_column: Name of the column containing anomaly indicators (1 for anomalies)
-        
-    Returns:
-        Plotly figure object with multiple subplots
-    """
+    # Create a comprehensive anomaly analysis dashboard with multiple visualizations
+    #
+    # Parameters:
+    #    df: DataFrame with energy data, anomaly indicators, and DatetimeIndex
+    #    value_column: Name of the column containing consumption values
+    #    anomaly_column: Name of the column containing anomaly indicators (1 for anomalies)
+    #
+    # Returns:
+    #    Plotly figure object with multiple subplots
     # Create a figure with subplots
     fig = make_subplots(
         rows=2, cols=2,
