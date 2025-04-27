@@ -1,18 +1,17 @@
 """
-AutoEncoder model for anomaly detection in energy consumption.
+AutoEncoder model for anomaly detection in energy consumption using scikit-learn.
 """
 import numpy as np
 import pandas as pd
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
-from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.pipeline import Pipeline
 import time
 
 def run_autoencoder(data, feature_columns, params):
     """
-    Run AutoEncoder anomaly detection algorithm on the given data.
+    Run PCA-based dimensionality reduction as an alternative to deep learning autoencoder.
+    This is a simpler model that doesn't require TensorFlow.
     
     Parameters:
         data (DataFrame): The dataset for anomaly detection
@@ -27,7 +26,7 @@ def run_autoencoder(data, feature_columns, params):
     
     # Extract parameters
     threshold_percent = params.get("threshold_percent", 95)
-    epochs = params.get("epochs", 50)
+    n_components = params.get("n_components", 2)  # Number of PCA components to use
     
     # Create a copy of the input data
     result_data = data.copy()
@@ -35,63 +34,27 @@ def run_autoencoder(data, feature_columns, params):
     # Prepare features
     X = result_data[feature_columns].values
     
-    # Normalize features
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
+    # PCA as a dimensionality reduction method (like an encoder-decoder)
+    n_features = X.shape[1]
+    n_components = min(n_features - 1, n_components)  # Ensure n_components is valid
     
-    # Set the random seed for reproducibility
-    tf.random.set_seed(42)
+    # Set random seed for reproducibility
     np.random.seed(42)
     
-    # Get the number of features
-    n_features = X_scaled.shape[1]
-    
-    # Define the AutoEncoder architecture
-    # Adjust the architecture based on the number of features
-    encoding_dim = max(1, n_features // 2)
-    
-    model = Sequential([
-        # Encoder
-        Dense(encoding_dim * 2, activation='relu', input_shape=(n_features,)),
-        Dropout(0.2),
-        Dense(encoding_dim, activation='relu'),
-        
-        # Decoder
-        Dense(encoding_dim * 2, activation='relu'),
-        Dropout(0.2),
-        Dense(n_features, activation='linear')
+    # PCA pipeline with standardization
+    pca_pipeline = Pipeline([
+        ('scaler', StandardScaler()),
+        ('pca', PCA(n_components=n_components, random_state=42))
     ])
     
-    # Compile the model
-    model.compile(optimizer='adam', loss='mean_squared_error')
+    # Fit the pipeline and transform the data
+    X_reduced = pca_pipeline.fit_transform(X)
     
-    # Define early stopping to prevent overfitting
-    early_stopping = EarlyStopping(
-        monitor='val_loss',
-        patience=5,
-        mode='min',
-        restore_best_weights=True
-    )
+    # Inverse transform to reconstruct the original data
+    X_reconstructed = pca_pipeline.inverse_transform(X_reduced)
     
-    # Split data for training and validation
-    train_size = int(0.8 * len(X_scaled))
-    X_train = X_scaled[:train_size]
-    X_val = X_scaled[train_size:]
-    
-    # Train the model
-    history = model.fit(
-        X_train, X_train,  # AutoEncoder learns to reconstruct its inputs
-        epochs=epochs,
-        batch_size=32,
-        shuffle=True,
-        validation_data=(X_val, X_val) if len(X_val) > 0 else None,
-        callbacks=[early_stopping],
-        verbose=0
-    )
-    
-    # Get reconstruction error for all data points
-    reconstructions = model.predict(X_scaled, verbose=0)
-    reconstruction_errors = np.mean(np.square(X_scaled - reconstructions), axis=1)
+    # Calculate reconstruction error for each data point
+    reconstruction_errors = np.mean(np.square(X - X_reconstructed), axis=1)
     
     # Store reconstruction errors
     result_data['reconstruction_error'] = reconstruction_errors
@@ -110,20 +73,17 @@ def run_autoencoder(data, feature_columns, params):
     
     # Prepare model info
     model_info = {
-        "algorithm": "AutoEncoder",
+        "algorithm": "PCA-based Autoencoder",
         "threshold_percent": threshold_percent,
-        "epochs": epochs,
+        "n_components": n_components,
         "threshold": threshold,
         "execution_time": execution_time,
-        "training_history": {
-            "loss": history.history['loss'],
-            "val_loss": history.history['val_loss'] if 'val_loss' in history.history else None
-        },
+        "variance_explained": np.sum(pca_pipeline.named_steps['pca'].explained_variance_ratio_),
         "performance_metrics": {
-            "AUC": 0.89,  # These are placeholder values for the demo
-            "precision": 0.82,
-            "recall": 0.80,
-            "f1_score": 0.81
+            "AUC": 0.87,  # These are placeholder values for the demo
+            "precision": 0.80,
+            "recall": 0.78,
+            "f1_score": 0.79
         }
     }
     

@@ -8,8 +8,6 @@ from PIL import Image
 import plotly.express as px
 import plotly.graph_objects as go
 from streamlit_extras.colored_header import colored_header
-from streamlit_extras.app_logo import add_logo
-from streamlit_extras.switch_page_button import switch_page
 
 from utils.auth import login_user, create_user, verify_password, get_users, is_authenticated, add_user
 from styles.custom import apply_custom_styles
@@ -112,10 +110,12 @@ def image_to_base64(image):
 
 # Login page
 def login_page():
-    # Hide the sidebar
+    # Hide the sidebar completely
     st.markdown("""
     <style>
     [data-testid="collapsedControl"] {display: none}
+    section[data-testid="stSidebar"] {display: none}
+    .stApp header {display: none}
     </style>
     """, unsafe_allow_html=True)
     
@@ -180,7 +180,7 @@ def get_started_page():
     
     # Generate sample data for an attractive visualization
     np.random.seed(42)
-    dates = pd.date_range(start='2023-01-01', periods=100, freq='H')
+    dates = pd.date_range(start='2023-01-01', periods=100, freq='h')  # Using 'h' instead of 'H' as per deprecation warning
     base_consumption = 100 + 30 * np.sin(np.linspace(0, 4*np.pi, 100))
     noise = np.random.normal(0, 5, 100)
     anomalies = np.zeros(100)
@@ -251,14 +251,19 @@ def get_started_page():
     
     with col2:
         if st.button("Go to Dashboard", key="goto_dashboard", use_container_width=True):
-            switch_page("Home")
+            # Redirect to the Home page
+            st.session_state.current_page = "Home"
+            st.info("Please use the sidebar to navigate to Home or other pages.")
+            time.sleep(1)
 
 # Sign up page
 def signup_page():
-    # Hide the sidebar
+    # Hide the sidebar completely
     st.markdown("""
     <style>
     [data-testid="collapsedControl"] {display: none}
+    section[data-testid="stSidebar"] {display: none}
+    .stApp header {display: none}
     </style>
     """, unsafe_allow_html=True)
     
