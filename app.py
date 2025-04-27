@@ -31,6 +31,30 @@ st.set_page_config(
     initial_sidebar_state="auto"
 )
 
+# This hides the default sidebar menu and "init" item from the beginning
+st.markdown("""
+<style>
+/* Hide the default menu and make space for our custom menu */
+section[data-testid="stSidebar"] > div.css-6qob1r {
+    visibility: hidden !important;
+    height: 0 !important;
+    position: absolute !important;
+    overflow: hidden !important;
+}
+
+/* Hide any "init" entries */
+div[data-testid="stSidebarNav"] ul > li:first-child,
+div[data-testid="stSidebarNav"] ul > li:has(a[href="/"]),
+section[data-testid="stSidebar"] div > ul > li:has(a[href="/"]) {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    position: absolute !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # Apply custom styles
 apply_custom_styles()
 
@@ -349,95 +373,102 @@ def main():
             st.markdown(f"### Welcome, {st.session_state.username}")
             st.markdown("---")
             
-            # Aggressively hide init message from sidebar with multiple techniques
-            hide_streamlit_style = """
+            # Create a completely custom navigation menu
+            st.markdown("### 📚 Navigation Menu")
+            
+            # Custom CSS to style our navigation menu
+            st.markdown("""
             <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            .stDeployButton {display:none;}
+            /* Hide default sidebar nav and other UI elements */
+            #MainMenu {visibility: hidden !important;}
+            footer {visibility: hidden !important;}
+            .stDeployButton {display: none !important;}
             
-            /* Aggressive init item removal - multiple selectors */
-            /* Hide first item in sidebar (init) */
-            div[data-testid="stSidebarNav"] ul > li:first-child {display: none !important;}
-            
-            /* Hide any item with href="/" (init) */
-            section[data-testid="stSidebar"] div > ul > li:has(a[href="/"]) {display: none !important;}
-            a[href="/"] {display: none !important;}
-            
-            /* Hide any item with text containing "init" (case insensitive) */
-            li:has(a:contains("init")) {display: none !important;}
-            li:has(a:contains("Init")) {display: none !important;}
-            </style>
-            """
-            st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-            
-            # Execute JavaScript to completely override the sidebar navigation
-            js_code = """
-            <script>
-            // More aggressive approach - completely override the sidebar navigation
-            function removeInitElement() {
-                // Get all navigation containers in the sidebar
-                const navContainers = document.querySelectorAll('[data-testid="stSidebarNav"]');
-                
-                if (navContainers.length > 0) {
-                    const navContainer = navContainers[0];
-                    
-                    // Get all navigation items
-                    const navItems = navContainer.querySelectorAll('li');
-                    
-                    // Check each item and hide if it's the "init" item or the first item
-                    navItems.forEach((item, index) => {
-                        const link = item.querySelector('a');
-                        
-                        // Hide the item if:
-                        // 1. It's the first item (index 0)
-                        // 2. Its href ends with '/'
-                        // 3. Its text contains 'init' (case insensitive)
-                        if (index === 0 || 
-                            (link && link.href && link.href.endsWith('/')) || 
-                            (link && link.textContent && link.textContent.toLowerCase().includes('init'))) {
-                            
-                            // Multiple techniques to ensure it's hidden
-                            item.style.display = 'none';
-                            item.style.visibility = 'hidden';
-                            item.style.height = '0';
-                            item.style.width = '0';
-                            item.style.opacity = '0';
-                            item.style.pointerEvents = 'none';
-                            item.style.position = 'absolute';
-                            item.setAttribute('aria-hidden', 'true');
-                            
-                            // Remove from DOM (most aggressive)
-                            // item.remove();
-                        }
-                    });
-                }
+            /* Style our custom navigation menu */
+            .nav-link {
+                padding: 10px 15px;
+                border-radius: 5px;
+                background-color: rgba(75, 123, 236, 0.1);
+                color: #f0f0f0;
+                text-decoration: none;
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+                transition: background-color 0.3s;
             }
             
-            // Run immediately and then periodically to catch dynamic content
-            removeInitElement();
+            .nav-link:hover {
+                background-color: rgba(75, 123, 236, 0.3);
+            }
             
-            // Create a MutationObserver to watch for DOM changes
-            const observer = new MutationObserver(function(mutations) {
-                removeInitElement();
-            });
+            .nav-link.active {
+                background-color: rgba(75, 123, 236, 0.5);
+                font-weight: bold;
+            }
             
-            // Start observing the document body for DOM changes
-            observer.observe(document.body, { 
-                childList: true, 
-                subtree: true 
-            });
+            .nav-icon {
+                margin-right: 10px;
+                font-size: 1.2rem;
+            }
+            </style>
+            """, unsafe_allow_html=True)
             
-            // Also run periodically as a fallback
-            setInterval(removeInitElement, 500);
-            </script>
-            """
-            st.components.v1.html(js_code, height=0)
+            # Define our navigation items
+            nav_items = [
+                {"name": "Dashboard", "icon": "📊", "url": "/pages/02_Dashboard.py"},
+                {"name": "Upload Data", "icon": "📤", "url": "/pages/03_Upload_Data.py"},
+                {"name": "Run Detection", "icon": "🔍", "url": "/pages/04_Run_Detection.py"},
+                {"name": "Results", "icon": "📈", "url": "/pages/05_Results.py"},
+                {"name": "Model Insights", "icon": "💡", "url": "/pages/06_Model_Insights.py"},
+                {"name": "Recommendations", "icon": "🔄", "url": "/pages/07_Recommendations.py"},
+                {"name": "Settings", "icon": "⚙️", "url": "/pages/08_Settings.py"}
+            ]
             
+            # Create clickable navigation links
+            for item in nav_items:
+                nav_link = f"""
+                <a href="{item['url']}" target="_self" class="nav-link">
+                    <span class="nav-icon">{item['icon']}</span> {item['name']}
+                </a>
+                """
+                st.markdown(nav_link, unsafe_allow_html=True)
+            
+            st.markdown("---")
+            
+            # Logout button
             if st.button("Logout"):
                 # Use the logout_user function from auth.py
                 logout_user()
                 st.rerun()
+                
+            # Force hide the default sidebar nav via JavaScript
+            js_code = """
+            <script>
+            function hideInitAndDefaultNav() {
+                // Hide the default Streamlit sidebar navigation
+                const sidebarNavs = document.querySelectorAll('[data-testid="stSidebarNav"]');
+                if (sidebarNavs.length > 0) {
+                    sidebarNavs.forEach(nav => {
+                        nav.style.display = 'none';
+                        nav.style.visibility = 'hidden';
+                        nav.style.opacity = '0';
+                        nav.style.height = '0';
+                        nav.style.position = 'absolute';
+                        nav.setAttribute('aria-hidden', 'true');
+                    });
+                }
+            }
+            
+            // Run immediately and periodically
+            hideInitAndDefaultNav();
+            setInterval(hideInitAndDefaultNav, 200);
+            
+            // Monitor DOM changes
+            const observer = new MutationObserver(hideInitAndDefaultNav);
+            observer.observe(document.body, { childList: true, subtree: true });
+            </script>
+            """
+            st.components.v1.html(js_code, height=0)
         
         # Main content
         get_started_page()

@@ -1,27 +1,19 @@
 [server]
 headless = true
+enableCORS = false
 address = "0.0.0.0"
 port = 5000
-enableCORS = false
-enableXsrfProtection = false
-maxUploadSize = 200
-maxMessageSize = 200
 
 [browser]
 gatherUsageStats = false
-serverAddress = "0.0.0.0"
-serverPort = 5000
-
-[runner]
-fastReruns = true
-magicEnabled = true
 
 [theme]
-base = "dark"
 primaryColor = "#4b7bec"
-backgroundColor = "#1e272e"
+backgroundColor = "#20252e"
 secondaryBackgroundColor = "#2d3436"
-textColor = "#ffffff"
+textColor = "#f0f0f0"
+font = "sans-serif"
 
-[logger]
-level = "error"
+# This setting allows us to optimize the sidebar and hide entries
+[ui]
+hideSidebarNav = true
