@@ -1,0 +1,623 @@
+{% extends "base.html" %}
+
+{% block title %}Settings | Energy Anomaly Detection{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-cog"></i> System Settings</h1>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <!-- Settings Navigation -->
+        <div class="card">
+            <div class="card-header">
+                <h5>Settings</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <a href="#profile-settings" class="list-group-item list-group-item-action bg-transparent active" data-bs-toggle="list">
+                        <i class="fas fa-user-circle me-2"></i> Profile Settings
+                    </a>
+                    <a href="#algorithm-settings" class="list-group-item list-group-item-action bg-transparent" data-bs-toggle="list">
+                        <i class="fas fa-sliders-h me-2"></i> Algorithm Settings
+                    </a>
+                    <a href="#appearance-settings" class="list-group-item list-group-item-action bg-transparent" data-bs-toggle="list">
+                        <i class="fas fa-palette me-2"></i> Appearance
+                    </a>
+                    <a href="#data-management" class="list-group-item list-group-item-action bg-transparent" data-bs-toggle="list">
+                        <i class="fas fa-database me-2"></i> Data Management
+                    </a>
+                    <a href="#system-info" class="list-group-item list-group-item-action bg-transparent" data-bs-toggle="list">
+                        <i class="fas fa-info-circle me-2"></i> System Information
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('upload.index') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-upload me-2"></i> Upload New Data
+                    </a>
+                    <a href="{{ url_for('detection.index') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-search me-2"></i> Run Detection
+                    </a>
+                    <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#clearDataModal">
+                        <i class="fas fa-trash-alt me-2"></i> Clear All Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <!-- Settings Content -->
+        <div class="tab-content">
+            <!-- Profile Settings -->
+            <div class="tab-pane fade show active" id="profile-settings">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Profile Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('settings.update_profile') }}">
+                            {{ profile_form.hidden_tag() }}
+                            
+                            <div class="mb-3">
+                                <label for="full_name" class="form-label">Full Name</label>
+                                {{ profile_form.full_name(class="form-control", id="full_name") }}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                {{ profile_form.email(class="form-control", id="email") }}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                {{ profile_form.username(class="form-control", id="username", readonly=True) }}
+                                <small class="text-muted">Username cannot be changed</small>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="company" class="form-label">Company/Organization (optional)</label>
+                                {{ profile_form.company(class="form-control", id="company") }}
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                {{ profile_form.submit(class="btn btn-primary") }}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Change Password -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5>Change Password</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('settings.change_password') }}">
+                            {{ password_form.hidden_tag() }}
+                            
+                            <div class="mb-3">
+                                <label for="current_password" class="form-label">Current Password</label>
+                                {{ password_form.current_password(class="form-control", id="current_password") }}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="new_password" class="form-label">New Password</label>
+                                {{ password_form.new_password(class="form-control", id="new_password") }}
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                {{ password_form.confirm_password(class="form-control", id="confirm_password") }}
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                {{ password_form.submit(class="btn btn-primary") }}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Algorithm Settings -->
+            <div class="tab-pane fade" id="algorithm-settings">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Algorithm Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('settings.update_algorithm_settings') }}">
+                            {{ algorithm_form.hidden_tag() }}
+                            
+                            <div class="mb-4">
+                                <label for="default_algorithm" class="form-label">Default Algorithm</label>
+                                {{ algorithm_form.default_algorithm(class="form-select", id="default_algorithm") }}
+                            </div>
+                            
+                            <!-- Isolation Forest Settings -->
+                            <h5 class="mt-4 mb-3">Isolation Forest Settings</h5>
+                            
+                            <div class="mb-3">
+                                <label for="if_n_estimators" class="form-label">Number of Estimators</label>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <input type="range" class="form-range" id="if_n_estimators_range" min="50" max="500" step="10" value="{{ algorithm_settings.if_n_estimators }}" 
+                                               oninput="document.getElementById('if_n_estimators').value = this.value;">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="input-group">
+                                            {{ algorithm_form.if_n_estimators(class="form-control", id="if_n_estimators", oninput="document.getElementById('if_n_estimators_range').value = this.value;") }}
+                                            <span class="input-group-text">trees</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="if_contamination" class="form-label">Contamination Factor</label>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <input type="range" class="form-range" id="if_contamination_range" min="0.01" max="0.2" step="0.01" value="{{ algorithm_settings.if_contamination }}" 
+                                               oninput="document.getElementById('if_contamination').value = this.value;">
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ algorithm_form.if_contamination(class="form-control", id="if_contamination", oninput="document.getElementById('if_contamination_range').value = this.value;") }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- AutoEncoder Settings -->
+                            <h5 class="mt-4 mb-3">AutoEncoder Settings</h5>
+                            
+                            <div class="mb-3">
+                                <label for="ae_threshold" class="form-label">Anomaly Threshold Percentile</label>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <input type="range" class="form-range" id="ae_threshold_range" min="90" max="99" step="1" value="{{ algorithm_settings.ae_threshold }}" 
+                                               oninput="document.getElementById('ae_threshold').value = this.value;">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="input-group">
+                                            {{ algorithm_form.ae_threshold(class="form-control", id="ae_threshold", oninput="document.getElementById('ae_threshold_range').value = this.value;") }}
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="ae_components" class="form-label">Number of Components</label>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <input type="range" class="form-range" id="ae_components_range" min="1" max="10" step="1" value="{{ algorithm_settings.ae_components }}" 
+                                               oninput="document.getElementById('ae_components').value = this.value;">
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ algorithm_form.ae_components(class="form-control", id="ae_components", oninput="document.getElementById('ae_components_range').value = this.value;") }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- K-Means Settings -->
+                            <h5 class="mt-4 mb-3">K-Means Settings</h5>
+                            
+                            <div class="mb-3">
+                                <label for="km_clusters" class="form-label">Number of Clusters</label>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <input type="range" class="form-range" id="km_clusters_range" min="2" max="20" step="1" value="{{ algorithm_settings.km_clusters }}" 
+                                               oninput="document.getElementById('km_clusters').value = this.value;">
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ algorithm_form.km_clusters(class="form-control", id="km_clusters", oninput="document.getElementById('km_clusters_range').value = this.value;") }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="km_threshold" class="form-label">Anomaly Threshold Percentile</label>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <input type="range" class="form-range" id="km_threshold_range" min="90" max="99" step="1" value="{{ algorithm_settings.km_threshold }}" 
+                                               oninput="document.getElementById('km_threshold').value = this.value;">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="input-group">
+                                            {{ algorithm_form.km_threshold(class="form-control", id="km_threshold", oninput="document.getElementById('km_threshold_range').value = this.value;") }}
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 mt-4">
+                                {{ algorithm_form.submit(class="btn btn-primary") }}
+                            </div>
+                            
+                            <div class="mt-3 text-center">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="resetToDefaults">Reset to Defaults</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Appearance Settings -->
+            <div class="tab-pane fade" id="appearance-settings">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Appearance Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('settings.update_appearance') }}">
+                            {{ appearance_form.hidden_tag() }}
+                            
+                            <div class="mb-4">
+                                <label class="form-label">Color Theme</label>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="theme" id="darkTheme" value="dark" {{ 'checked' if appearance_settings.theme == 'dark' else '' }}>
+                                            <label class="form-check-label" for="darkTheme">
+                                                Dark (Default)
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="theme" id="lightTheme" value="light" {{ 'checked' if appearance_settings.theme == 'light' else '' }}>
+                                            <label class="form-check-label" for="lightTheme">
+                                                Light
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="theme" id="systemTheme" value="system" {{ 'checked' if appearance_settings.theme == 'system' else '' }}>
+                                            <label class="form-check-label" for="systemTheme">
+                                                System Default
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="accent_color" class="form-label">Accent Color</label>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="accent_color" id="blueAccent" value="blue" {{ 'checked' if appearance_settings.accent_color == 'blue' else '' }}>
+                                            <label class="form-check-label" for="blueAccent">
+                                                <span class="color-swatch blue-swatch"></span> Blue (Default)
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="accent_color" id="purpleAccent" value="purple" {{ 'checked' if appearance_settings.accent_color == 'purple' else '' }}>
+                                            <label class="form-check-label" for="purpleAccent">
+                                                <span class="color-swatch purple-swatch"></span> Purple
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="accent_color" id="greenAccent" value="green" {{ 'checked' if appearance_settings.accent_color == 'green' else '' }}>
+                                            <label class="form-check-label" for="greenAccent">
+                                                <span class="color-swatch green-swatch"></span> Green
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="accent_color" id="orangeAccent" value="orange" {{ 'checked' if appearance_settings.accent_color == 'orange' else '' }}>
+                                            <label class="form-check-label" for="orangeAccent">
+                                                <span class="color-swatch orange-swatch"></span> Orange
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="form-label">Dashboard Layout</label>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="dashboard_layout" id="compactLayout" value="compact" {{ 'checked' if appearance_settings.dashboard_layout == 'compact' else '' }}>
+                                            <label class="form-check-label" for="compactLayout">
+                                                Compact
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="dashboard_layout" id="spaciousLayout" value="spacious" {{ 'checked' if appearance_settings.dashboard_layout == 'spacious' else '' }}>
+                                            <label class="form-check-label" for="spaciousLayout">
+                                                Spacious
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                {{ appearance_form.submit(class="btn btn-primary") }}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Data Management -->
+            <div class="tab-pane fade" id="data-management">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Data Management</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card bg-dark h-100">
+                                    <div class="card-body">
+                                        <h6>Storage Usage</h6>
+                                        <div class="mt-3">
+                                            <div class="progress mb-2">
+                                                <div class="progress-bar" role="progressbar" style="width: {{ storage_usage.percentage }}%;" aria-valuenow="{{ storage_usage.percentage }}" aria-valuemin="0" aria-valuemax="100">{{ storage_usage.percentage }}%</div>
+                                            </div>
+                                            <small>{{ storage_usage.used }} MB used of {{ storage_usage.total }} MB total</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card bg-dark h-100">
+                                    <div class="card-body">
+                                        <h6>Database Stats</h6>
+                                        <ul class="list-unstyled mt-3">
+                                            <li>Datasets: {{ database_stats.datasets }}</li>
+                                            <li>Analyses: {{ database_stats.analyses }}</li>
+                                            <li>Detected Anomalies: {{ database_stats.anomalies }}</li>
+                                            <li>Total Records: {{ database_stats.total_records }}</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h6 class="mb-3">Backup and Export</h6>
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <div class="d-grid">
+                                    <a href="{{ url_for('settings.backup_database') }}" class="btn btn-outline-primary">
+                                        <i class="fas fa-download me-2"></i> Backup Database
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="d-grid">
+                                    <a href="{{ url_for('settings.export_all_data') }}" class="btn btn-outline-primary">
+                                        <i class="fas fa-file-export me-2"></i> Export All Data as CSV
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h6 class="mb-3">Data Cleanup</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="d-grid">
+                                    <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#clearAnalysesModal">
+                                        <i class="fas fa-broom me-2"></i> Clear All Analyses
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="d-grid">
+                                    <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#clearDataModal">
+                                        <i class="fas fa-trash-alt me-2"></i> Clear All Data
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Information -->
+            <div class="tab-pane fade" id="system-info">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>System Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h6>System Details</h6>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item bg-transparent">
+                                        <strong>Version:</strong> {{ system_info.version }}
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <strong>Database:</strong> {{ system_info.database_type }}
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <strong>Operating Mode:</strong> {{ system_info.operating_mode }}
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <strong>Last Update:</strong> {{ system_info.last_update }}
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h6>Libraries and Algorithms</h6>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item bg-transparent">
+                                        <strong>scikit-learn:</strong> {{ system_info.libraries.sklearn }}
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <strong>NumPy:</strong> {{ system_info.libraries.numpy }}
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <strong>pandas:</strong> {{ system_info.libraries.pandas }}
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <strong>Plotly:</strong> {{ system_info.libraries.plotly }}
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <h6 class="mb-3">About</h6>
+                        <p>Energy Anomaly Detection System is a professional tool for identifying unusual patterns in energy consumption data using advanced machine learning algorithms.</p>
+                        <p>The system operates entirely offline, ensuring your data remains secure and private.</p>
+                        
+                        <div class="text-center mt-4">
+                            <p>© 2025 Opulent Chikwiramakomo. All rights reserved.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clear All Data Modal -->
+<div class="modal fade" id="clearDataModal" tabindex="-1" aria-labelledby="clearDataModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title" id="clearDataModalLabel">Clear All Data</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Warning: This action cannot be undone!
+                </div>
+                <p>Are you sure you want to clear all data? This will delete all datasets, analyses, and detected anomalies.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('settings.clear_all_data') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">Clear All Data</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clear Analyses Modal -->
+<div class="modal fade" id="clearAnalysesModal" tabindex="-1" aria-labelledby="clearAnalysesModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title" id="clearAnalysesModalLabel">Clear All Analyses</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Warning: This action cannot be undone!
+                </div>
+                <p>Are you sure you want to clear all analyses? This will delete all analysis results and detected anomalies, but your datasets will be preserved.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('settings.clear_all_analyses') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-warning">Clear All Analyses</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle tab navigation via URL hash
+        const hash = window.location.hash;
+        if (hash) {
+            const tab = document.querySelector(`.list-group-item[href="${hash}"]`);
+            if (tab) {
+                tab.click();
+            }
+        }
+        
+        // Reset algorithm settings to defaults
+        document.getElementById('resetToDefaults').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Set default values
+            document.getElementById('if_n_estimators').value = 100;
+            document.getElementById('if_n_estimators_range').value = 100;
+            
+            document.getElementById('if_contamination').value = 0.05;
+            document.getElementById('if_contamination_range').value = 0.05;
+            
+            document.getElementById('ae_threshold').value = 95;
+            document.getElementById('ae_threshold_range').value = 95;
+            
+            document.getElementById('ae_components').value = 2;
+            document.getElementById('ae_components_range').value = 2;
+            
+            document.getElementById('km_clusters').value = 5;
+            document.getElementById('km_clusters_range').value = 5;
+            
+            document.getElementById('km_threshold').value = 95;
+            document.getElementById('km_threshold_range').value = 95;
+            
+            // Show confirmation
+            alert('Algorithm settings have been reset to default values. Click Save to apply these changes.');
+        });
+    });
+</script>
+
+<style>
+.color-swatch {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+.blue-swatch {
+    background-color: #4b7bec;
+}
+
+.purple-swatch {
+    background-color: #a55eea;
+}
+
+.green-swatch {
+    background-color: #26de81;
+}
+
+.orange-swatch {
+    background-color: #fd9644;
+}
+
+.list-group-item.active {
+    background-color: rgba(75, 123, 236, 0.2);
+    border-color: rgba(75, 123, 236, 0.5);
+}
+</style>
+{% endblock %}

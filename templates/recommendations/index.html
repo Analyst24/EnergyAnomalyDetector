@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Recommendations | Energy Anomaly Detection{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-clipboard-list"></i> Energy Efficiency Recommendations</h1>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-filter"></i> Select Analysis</h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('recommendations.index') }}">
+                    <div class="row">
+                        <div class="col-lg-6 mb-3">
+                            <label for="analysis_id" class="form-label">Analysis</label>
+                            <select class="form-select" id="analysis_id" name="analysis_id">
+                                <option value="">Select an analysis...</option>
+                                {% for analysis in analyses %}
+                                    <option value="{{ analysis.id }}" {% if selected_analysis_id == analysis.id %}selected{% endif %}>
+                                        {{ analysis.name }} ({{ analysis.algorithm }}) - {{ analysis.created_at.strftime('%Y-%m-%d') }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-lg-3 mb-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">Get Recommendations</button>
+                        </div>
+                        
+                        {% if selected_analysis %}
+                            <div class="col-lg-3 mb-3 d-flex align-items-end">
+                                <a href="{{ url_for('results.view', id=selected_analysis.id) }}" class="btn btn-secondary w-100">
+                                    <i class="fas fa-chart-bar me-2"></i> View Results
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if recommendations %}
+    <!-- Overview -->
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Executive Summary</h5>
+                </div>
+                <div class="card-body">
+                    <p>Based on the anomaly detection results from <strong>{{ selected_analysis.name }}</strong>, we've identified {{ recommendations|length }} key recommendations to improve energy efficiency and reduce consumption.</p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-lg-4">
+                            <div class="metric-card">
+                                <div class="metric-icon">
+                                    <i class="fas fa-bolt"></i>
+                                </div>
+                                <div class="metric-value">{{ potential_savings }} kWh</div>
+                                <div class="metric-label">Potential Monthly Savings</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-4">
+                            <div class="metric-card">
+                                <div class="metric-icon">
+                                    <i class="fas fa-percentage"></i>
+                                </div>
+                                <div class="metric-value">{{ efficiency_improvement }}%</div>
+                                <div class="metric-label">Efficiency Improvement</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-4">
+                            <div class="metric-card">
+                                <div class="metric-icon">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div class="metric-value">{{ roi_period }} months</div>
+                                <div class="metric-label">Average ROI Period</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="row">
+        {% for recommendation in recommendations %}
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>{{ recommendation.title }}</h5>
+                        <span class="badge bg-{{ recommendation.impact_class }}">{{ recommendation.impact }}</span>
+                    </div>
+                    <div class="card-body">
+                        <p>{{ recommendation.description }}</p>
+                        
+                        <div class="row mt-4">
+                            <div class="col-sm-4">
+                                <div class="text-center mb-3">
+                                    <div class="recommendation-icon">
+                                        {% if recommendation.category == 'Maintenance' %}
+                                            <i class="fas fa-tools"></i>
+                                        {% elif recommendation.category == 'Monitoring' %}
+                                            <i class="fas fa-desktop"></i>
+                                        {% elif recommendation.category == 'Operations' %}
+                                            <i class="fas fa-cogs"></i>
+                                        {% elif recommendation.category == 'Equipment' %}
+                                            <i class="fas fa-plug"></i>
+                                        {% elif recommendation.category == 'Behavior' %}
+                                            <i class="fas fa-users"></i>
+                                        {% else %}
+                                            <i class="fas fa-lightbulb"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="mt-2">{{ recommendation.category }}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-sm-8">
+                                <div class="recommendation-details">
+                                    <p><strong>Implementation Cost:</strong> <span class="text-{{ recommendation.cost_class }}">{{ recommendation.cost }}</span></p>
+                                    <p><strong>Timeline:</strong> {{ recommendation.timeline }}</p>
+                                    <p><strong>Expected Savings:</strong> {{ recommendation.savings }} kWh/month</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if recommendation.notes %}
+                            <div class="mt-3 pt-3 border-top">
+                                <p><strong>Notes:</strong> {{ recommendation.notes }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Patterns and Insights -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Anomaly Patterns and Insights</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6">
+                    <h6>Key Patterns Identified</h6>
+                    <ul>
+                        {% for pattern in patterns %}
+                            <li>{{ pattern }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <div class="col-lg-6">
+                    <h6>Implementation Priorities</h6>
+                    <div id="priority-chart" class="plotly-chart" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Download Report -->
+    <div class="d-grid gap-2 col-md-6 mx-auto mb-4">
+        <a href="{{ url_for('recommendations.download_pdf', analysis_id=selected_analysis.id) }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-file-pdf me-2"></i> Download Full Recommendations Report
+        </a>
+    </div>
+{% else %}
+    {% if selected_analysis %}
+        <div class="alert alert-info">
+            <h4 class="alert-heading">Generating Recommendations</h4>
+            <p>We're analyzing the results from <strong>{{ selected_analysis.name }}</strong> to generate personalized recommendations.</p>
+            <p>This may take a few moments...</p>
+            <div class="progress mt-3">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <h4 class="alert-heading">No Analysis Selected</h4>
+            <p>Please select an analysis from the dropdown above to generate energy efficiency recommendations.</p>
+            <hr>
+            <p class="mb-0">If you haven't run any anomaly detection analyses yet, please go to the Run Detection page first.</p>
+        </div>
+    {% endif %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if recommendations %}
+            // Priority chart
+            const priorityData = [{
+                values: [40, 25, 20, 15],
+                labels: ['High', 'Medium', 'Low', 'Long-term'],
+                type: 'pie',
+                marker: {
+                    colors: ['#fc5c65', '#fed330', '#4b7bec', '#a55eea']
+                },
+                textinfo: 'percent',
+                insidetextfont: {
+                    color: '#ffffff'
+                },
+                hoverinfo: 'label+percent+value'
+            }];
+            
+            const priorityLayout = {
+                title: 'Recommendation Priorities',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0.2)',
+                font: { color: '#dfe4ea' },
+                margin: { l: 20, r: 20, t: 50, b: 20 }
+            };
+            
+            Plotly.newPlot('priority-chart', priorityData, priorityLayout, {responsive: true});
+        {% endif %}
+    });
+</script>
+
+<style>
+.recommendation-icon {
+    font-size: 2.5rem;
+    color: var(--primary);
+    margin-bottom: 10px;
+}
+
+.recommendation-details p {
+    margin-bottom: 0.5rem;
+}
+
+.text-high {
+    color: #fc5c65;
+}
+
+.text-medium {
+    color: #fed330;
+}
+
+.text-low {
+    color: #4b7bec;
+}
+</style>
+{% endblock %}

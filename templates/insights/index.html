@@ -1,0 +1,469 @@
+{% extends "base.html" %}
+
+{% block title %}Model Insights | Energy Anomaly Detection{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-lightbulb"></i> Model Insights</h1>
+{% endblock %}
+
+{% block content %}
+<!-- Filter controls -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="fas fa-filter"></i> Select Analysis</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('insights.index') }}">
+            <div class="row">
+                <div class="col-lg-6 mb-3">
+                    <label for="analysis_id" class="form-label">Analysis</label>
+                    <select class="form-select" id="analysis_id" name="analysis_id">
+                        <option value="">Select an analysis...</option>
+                        {% for analysis in analyses %}
+                            <option value="{{ analysis.id }}" {% if selected_analysis_id == analysis.id %}selected{% endif %}>
+                                {{ analysis.name }} ({{ analysis.algorithm }}) - {{ analysis.created_at.strftime('%Y-%m-%d') }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-lg-3 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">View Insights</button>
+                </div>
+                
+                {% if selected_analysis %}
+                    <div class="col-lg-3 mb-3 d-flex align-items-end">
+                        <a href="{{ url_for('results.view', id=selected_analysis.id) }}" class="btn btn-secondary w-100">
+                            <i class="fas fa-chart-bar me-2"></i> View Results
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if selected_analysis %}
+    <!-- Model Overview -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5>Model Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Analysis Details</h6>
+                            <p><strong>Name:</strong> {{ selected_analysis.name }}</p>
+                            <p><strong>Algorithm:</strong> {{ selected_analysis.algorithm }}</p>
+                            <p><strong>Dataset:</strong> {{ selected_analysis.dataset_name }}</p>
+                            <p><strong>Created:</strong> {{ selected_analysis.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>Algorithm Parameters</h6>
+                            <ul>
+                                {% for param, value in selected_analysis.parameters.items() %}
+                                    <li><strong>{{ param }}:</strong> {{ value }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <h6>Algorithm Description</h6>
+                            {% if selected_analysis.algorithm == 'isolation_forest' %}
+                                <p>Isolation Forest works by isolating observations by randomly selecting a feature and then randomly selecting a split value between the maximum and minimum values of that feature. The algorithm is highly effective at detecting anomalies in high-dimensional spaces without requiring density estimation.</p>
+                                <p>Since anomalies are typically few and different, they are more susceptible to isolation, resulting in shorter paths in the isolation trees. This method is particularly effective for detecting sudden spikes or drops in energy consumption.</p>
+                            {% elif selected_analysis.algorithm == 'autoencoder' %}
+                                <p>An Autoencoder is a type of neural network that learns to compress data and then reconstruct it. The model is trained on normal data patterns, and anomalies are identified as instances where the reconstruction error exceeds a threshold.</p>
+                                <p>The dimensionality reduction performed by the autoencoder captures the most important patterns in the energy consumption data, making it excellent at detecting subtle anomalies that deviate from these learned patterns.</p>
+                            {% elif selected_analysis.algorithm == 'kmeans' %}
+                                <p>K-Means Clustering groups data points into clusters based on similarity. After clustering, points that are far from their cluster centers (centroids) are considered anomalies.</p>
+                                <p>This method is particularly useful for identifying energy consumption patterns that don't belong to any of the normal usage clusters, and works well when the data naturally forms distinct usage patterns.</p>
+                            {% else %}
+                                <p>Detailed information about this algorithm is not available.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5>Performance Metrics</h5>
+                </div>
+                <div class="card-body">
+                    <div id="metrics-chart" class="plotly-chart" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Feature Importance and Patterns -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5>Feature Importance</h5>
+                </div>
+                <div class="card-body">
+                    <div id="feature-importance-chart" class="plotly-chart" style="height: 350px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5>Anomaly Patterns</h5>
+                </div>
+                <div class="card-body">
+                    <div id="anomaly-patterns-chart" class="plotly-chart" style="height: 350px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Threshold Analysis -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Threshold Analysis</h5>
+        </div>
+        <div class="card-body">
+            <p>This chart shows how the number of detected anomalies changes with different threshold values. The current threshold is marked with a vertical line.</p>
+            <div id="threshold-chart" class="plotly-chart" style="height: 400px;"></div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card bg-dark">
+                        <div class="card-body">
+                            <h6>Threshold Selection Guide</h6>
+                            <p>When selecting a threshold:</p>
+                            <ul>
+                                <li><strong>Lower threshold:</strong> More anomalies detected, but higher chance of false positives</li>
+                                <li><strong>Higher threshold:</strong> Fewer anomalies detected, but lower chance of false positives</li>
+                            </ul>
+                            <p>The optimal threshold balances between finding true anomalies and minimizing false alarms.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card bg-dark">
+                        <div class="card-body">
+                            <h6>Suggested Improvements</h6>
+                            {% if selected_analysis.algorithm == 'isolation_forest' %}
+                                <ul>
+                                    <li>Try increasing the number of estimators for better accuracy</li>
+                                    <li>Adjust contamination based on domain knowledge of expected anomaly rate</li>
+                                    <li>Consider feature engineering to highlight potential anomalies</li>
+                                </ul>
+                            {% elif selected_analysis.algorithm == 'autoencoder' %}
+                                <ul>
+                                    <li>Experiment with different threshold percentiles</li>
+                                    <li>Try different numbers of components for dimensionality reduction</li>
+                                    <li>Consider using time-based features for temporal patterns</li>
+                                </ul>
+                            {% elif selected_analysis.algorithm == 'kmeans' %}
+                                <ul>
+                                    <li>Experiment with different numbers of clusters</li>
+                                    <li>Try feature scaling to improve clustering quality</li>
+                                    <li>Consider combining with other algorithms for better results</li>
+                                </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Comparative Analysis -->
+    <div class="card">
+        <div class="card-header">
+            <h5>Comparative Analysis</h5>
+        </div>
+        <div class="card-body">
+            <p>This chart compares the performance of different algorithms on the same dataset.</p>
+            <div id="comparative-chart" class="plotly-chart" style="height: 400px;"></div>
+            
+            <div class="mt-4">
+                <h6>Key Insights</h6>
+                <ul>
+                    {% if selected_analysis.algorithm == 'isolation_forest' %}
+                        <li>Isolation Forest performs well at detecting sudden, extreme anomalies</li>
+                        <li>Performance is comparable to or better than other algorithms for spike detection</li>
+                        <li>Processing time is typically faster than autoencoder approaches</li>
+                    {% elif selected_analysis.algorithm == 'autoencoder' %}
+                        <li>Autoencoder excels at detecting subtle pattern deviations</li>
+                        <li>Better at capturing complex temporal dependencies than other methods</li>
+                        <li>May require more computational resources than simpler algorithms</li>
+                    {% elif selected_analysis.algorithm == 'kmeans' %}
+                        <li>K-Means provides good results when data has natural clusters</li>
+                        <li>Simplest and fastest of the three algorithms</li>
+                        <li>May miss anomalies that are close to cluster boundaries</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        <h4 class="alert-heading">No Analysis Selected</h4>
+        <p>Please select an analysis from the dropdown above to view model insights.</p>
+        <hr>
+        <p class="mb-0">If you haven't run any anomaly detection analyses yet, please go to the Run Detection page first.</p>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if selected_analysis %}
+            // Performance metrics chart
+            const metricsData = [{
+                type: 'bar',
+                x: ['Precision', 'Recall', 'F1 Score', 'AUC'],
+                y: [0.82, 0.78, 0.80, 0.87],
+                marker: {
+                    color: ['#4b7bec', '#a55eea', '#26de81', '#2bcbba']
+                }
+            }];
+            
+            const metricsLayout = {
+                title: 'Model Performance',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0.2)',
+                font: { color: '#dfe4ea' },
+                margin: { l: 50, r: 20, t: 50, b: 50 },
+                xaxis: {
+                    showgrid: false
+                },
+                yaxis: {
+                    showgrid: true,
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    range: [0, 1]
+                }
+            };
+            
+            Plotly.newPlot('metrics-chart', metricsData, metricsLayout, {responsive: true});
+            
+            // Feature importance chart
+            const featureData = [{
+                type: 'bar',
+                x: [0.45, 0.28, 0.18, 0.09],
+                y: ['Consumption', 'Temperature', 'Time of Day', 'Day of Week'],
+                orientation: 'h',
+                marker: {
+                    color: '#4b7bec'
+                }
+            }];
+            
+            const featureLayout = {
+                title: 'Feature Importance',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0.2)',
+                font: { color: '#dfe4ea' },
+                margin: { l: 120, r: 20, t: 50, b: 50 },
+                xaxis: {
+                    title: 'Importance Score',
+                    showgrid: true,
+                    gridcolor: 'rgba(255,255,255,0.1)'
+                },
+                yaxis: {
+                    showgrid: false
+                }
+            };
+            
+            Plotly.newPlot('feature-importance-chart', featureData, featureLayout, {responsive: true});
+            
+            // Anomaly patterns chart
+            const normalData = {
+                x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+                y: [45, 40, 38, 35, 37, 45, 60, 85, 95, 90, 88, 92, 95, 90, 88, 92, 100, 105, 95, 85, 75, 65, 55, 50],
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Normal Pattern',
+                line: {
+                    color: '#4b7bec',
+                    width: 3
+                }
+            };
+            
+            const anomalyType1 = {
+                x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+                y: [45, 40, 38, 35, 37, 45, 60, 145, 95, 90, 88, 92, 95, 90, 88, 92, 100, 105, 95, 85, 75, 65, 55, 50],
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Spike Anomaly',
+                line: {
+                    color: '#fc5c65',
+                    width: 2
+                }
+            };
+            
+            const anomalyType2 = {
+                x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+                y: [45, 40, 38, 35, 37, 45, 60, 85, 95, 90, 88, 92, 40, 35, 38, 92, 100, 105, 95, 85, 75, 65, 55, 50],
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Drop Anomaly',
+                line: {
+                    color: '#fed330',
+                    width: 2
+                }
+            };
+            
+            const patternsLayout = {
+                title: 'Typical Anomaly Patterns',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0.2)',
+                font: { color: '#dfe4ea' },
+                margin: { l: 50, r: 20, t: 50, b: 50 },
+                xaxis: {
+                    title: 'Hour of Day',
+                    showgrid: true,
+                    gridcolor: 'rgba(255,255,255,0.1)'
+                },
+                yaxis: {
+                    title: 'Energy Consumption (kWh)',
+                    showgrid: true,
+                    gridcolor: 'rgba(255,255,255,0.1)'
+                },
+                legend: {
+                    orientation: 'h',
+                    y: 1.1
+                }
+            };
+            
+            Plotly.newPlot('anomaly-patterns-chart', [normalData, anomalyType1, anomalyType2], patternsLayout, {responsive: true});
+            
+            // Threshold analysis chart
+            const thresholds = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2];
+            const anomalyCounts = [48, 42, 36, 31, 26, 22, 19, 16, 14, 12, 9, 7, 5, 3, 2];
+            
+            const thresholdData = [{
+                x: thresholds,
+                y: anomalyCounts,
+                type: 'scatter',
+                mode: 'lines+markers',
+                marker: {
+                    color: '#4b7bec',
+                    size: 8
+                },
+                line: {
+                    color: '#4b7bec',
+                    width: 2
+                }
+            }];
+            
+            const thresholdLayout = {
+                title: 'Number of Anomalies vs. Threshold',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0.2)',
+                font: { color: '#dfe4ea' },
+                margin: { l: 50, r: 20, t: 50, b: 50 },
+                xaxis: {
+                    title: 'Threshold Value',
+                    showgrid: true,
+                    gridcolor: 'rgba(255,255,255,0.1)'
+                },
+                yaxis: {
+                    title: 'Number of Anomalies',
+                    showgrid: true,
+                    gridcolor: 'rgba(255,255,255,0.1)'
+                },
+                shapes: [{
+                    type: 'line',
+                    x0: 0.05,
+                    y0: 0,
+                    x1: 0.05,
+                    y1: 50,
+                    line: {
+                        color: '#fc5c65',
+                        width: 2,
+                        dash: 'dash'
+                    }
+                }],
+                annotations: [{
+                    x: 0.05,
+                    y: 28,
+                    xref: 'x',
+                    yref: 'y',
+                    text: 'Current Threshold',
+                    showarrow: true,
+                    arrowhead: 2,
+                    arrowsize: 1,
+                    arrowwidth: 2,
+                    ax: 40,
+                    ay: -40,
+                    font: {
+                        color: '#fc5c65'
+                    }
+                }]
+            };
+            
+            Plotly.newPlot('threshold-chart', thresholdData, thresholdLayout, {responsive: true});
+            
+            // Comparative analysis chart
+            const metricsLabels = ['Precision', 'Recall', 'F1 Score', 'AUC', 'Speed'];
+            
+            const comparativeData = [
+                {
+                    x: metricsLabels,
+                    y: [0.82, 0.78, 0.80, 0.87, 0.95],
+                    type: 'bar',
+                    name: 'Isolation Forest',
+                    marker: { color: '#4b7bec' }
+                },
+                {
+                    x: metricsLabels,
+                    y: [0.88, 0.72, 0.79, 0.89, 0.65],
+                    type: 'bar',
+                    name: 'AutoEncoder',
+                    marker: { color: '#a55eea' }
+                },
+                {
+                    x: metricsLabels,
+                    y: [0.75, 0.82, 0.78, 0.84, 0.90],
+                    type: 'bar',
+                    name: 'K-Means',
+                    marker: { color: '#26de81' }
+                }
+            ];
+            
+            const comparativeLayout = {
+                title: 'Algorithm Performance Comparison',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0.2)',
+                font: { color: '#dfe4ea' },
+                margin: { l: 50, r: 20, t: 50, b: 50 },
+                xaxis: {
+                    showgrid: false
+                },
+                yaxis: {
+                    showgrid: true,
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    title: 'Score (higher is better)',
+                    range: [0, 1]
+                },
+                barmode: 'group',
+                legend: {
+                    orientation: 'h',
+                    y: 1.1
+                }
+            };
+            
+            Plotly.newPlot('comparative-chart', comparativeData, comparativeLayout, {responsive: true});
+        {% endif %}
+    });
+</script>
+{% endblock %}

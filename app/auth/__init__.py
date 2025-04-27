@@ -1,8 +1,4 @@
 """
-Authentication blueprint for user management.
+Authentication module for the Energy Anomaly Detection System.
 """
-from flask import Blueprint
-
-auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
-
-from app.auth import routes
+from app.auth.routes import auth_bp

@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Results | Energy Anomaly Detection{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-chart-bar"></i> Analysis Results</h1>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-filter"></i> Filter Results</h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('results.index') }}" class="row">
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <label for="dataset" class="form-label">Dataset</label>
+                        <select class="form-select" id="dataset" name="dataset">
+                            <option value="">All Datasets</option>
+                            {% for dataset in datasets %}
+                                <option value="{{ dataset.id }}" {% if selected_dataset == dataset.id %}selected{% endif %}>
+                                    {{ dataset.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <label for="algorithm" class="form-label">Algorithm</label>
+                        <select class="form-select" id="algorithm" name="algorithm">
+                            <option value="">All Algorithms</option>
+                            <option value="isolation_forest" {% if selected_algorithm == 'isolation_forest' %}selected{% endif %}>Isolation Forest</option>
+                            <option value="autoencoder" {% if selected_algorithm == 'autoencoder' %}selected{% endif %}>AutoEncoder</option>
+                            <option value="kmeans" {% if selected_algorithm == 'kmeans' %}selected{% endif %}>K-Means</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <label for="date_range" class="form-label">Date Range</label>
+                        <select class="form-select" id="date_range" name="date_range">
+                            <option value="">All Time</option>
+                            <option value="today" {% if date_range == 'today' %}selected{% endif %}>Today</option>
+                            <option value="yesterday" {% if date_range == 'yesterday' %}selected{% endif %}>Yesterday</option>
+                            <option value="7days" {% if date_range == '7days' %}selected{% endif %}>Last 7 Days</option>
+                            <option value="30days" {% if date_range == '30days' %}selected{% endif %}>Last 30 Days</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6 mb-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if analyses %}
+    <div class="row">
+        {% for analysis in analyses %}
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>{{ analysis.name }}</h5>
+                        <span class="badge bg-primary">{{ analysis.algorithm }}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-sm-6">
+                                <p><strong>Dataset:</strong> {{ analysis.dataset_name }}</p>
+                                <p><strong>Created:</strong> {{ analysis.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                            </div>
+                            <div class="col-sm-6">
+                                <p><strong>Anomalies Found:</strong> {{ analysis.anomaly_count }}</p>
+                                <p><strong>Execution Time:</strong> {{ analysis.execution_time }} seconds</p>
+                            </div>
+                        </div>
+                        
+                        {% if analysis.description %}
+                            <div class="mb-3">
+                                <p><strong>Description:</strong><br>{{ analysis.description }}</p>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="text-center mb-3">
+                            <div id="chart-{{ analysis.id }}" class="plotly-chart" style="height: 250px;"></div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('results.view', id=analysis.id) }}" class="btn btn-primary">
+                                <i class="fas fa-eye me-2"></i> View Full Results
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('results.index', page=pagination.page-1, dataset=selected_dataset, algorithm=selected_algorithm, date_range=date_range) }}">Previous</a>
+                </li>
+                
+                {% for p in range(1, pagination.pages + 1) %}
+                    <li class="page-item {% if pagination.page == p %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('results.index', page=p, dataset=selected_dataset, algorithm=selected_algorithm, date_range=date_range) }}">{{ p }}</a>
+                    </li>
+                {% endfor %}
+                
+                <li class="page-item {% if pagination.page == pagination.pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('results.index', page=pagination.page+1, dataset=selected_dataset, algorithm=selected_algorithm, date_range=date_range) }}">Next</a>
+                </li>
+            </ul>
+        </nav>
+    {% endif %}
+{% else %}
+    <div class="alert alert-info">
+        <h4 class="alert-heading">No Analysis Results Found</h4>
+        <p>You haven't run any anomaly detection algorithms yet, or no results match your filters.</p>
+        <hr>
+        <p class="mb-0">
+            <a href="{{ url_for('detection.index') }}" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i> Run Detection
+            </a>
+        </p>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% for analysis in analyses %}
+        // Create sample visualization for each analysis card
+        (function() {
+            // Generate sample data for this analysis
+            const timestamps = [];
+            const values = [];
+            const anomalies = [];
+            
+            // Create 50 data points for each chart
+            const now = new Date();
+            for (let i = 50; i >= 0; i--) {
+                const date = new Date(now.getTime() - i * 3600000);
+                timestamps.push(date);
+                
+                // Base value with some noise
+                const base = 100 + 20 * Math.sin(i * 0.1);
+                const noise = Math.random() * 10 - 5;
+                let value = base + noise;
+                
+                // Add an anomaly every 10 points
+                if (i % 10 === 0) {
+                    value += (i % 20 === 0) ? 50 : -30;
+                    anomalies.push({
+                        x: date,
+                        y: value
+                    });
+                }
+                
+                values.push(value);
+            }
+            
+            // Create the chart
+            const chartData = [{
+                x: timestamps,
+                y: values,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Energy Consumption',
+                line: {
+                    color: '#4b7bec',
+                    width: 2
+                }
+            }];
+            
+            // Add anomaly points if there are any
+            if (anomalies.length > 0) {
+                chartData.push({
+                    x: anomalies.map(p => p.x),
+                    y: anomalies.map(p => p.y),
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: 'Anomalies',
+                    marker: {
+                        size: 8,
+                        color: '#fc5c65',
+                        symbol: 'circle'
+                    }
+                });
+            }
+            
+            const layout = {
+                title: '',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0.2)',
+                font: { color: '#dfe4ea', size: 10 },
+                margin: { l: 40, r: 10, t: 10, b: 30 },
+                xaxis: {
+                    showgrid: true,
+                    gridcolor: 'rgba(255,255,255,0.1)'
+                },
+                yaxis: {
+                    showgrid: true,
+                    gridcolor: 'rgba(255,255,255,0.1)'
+                },
+                showlegend: false
+            };
+            
+            Plotly.newPlot('chart-{{ analysis.id }}', chartData, layout, {
+                responsive: true,
+                displayModeBar: false
+            });
+        })();
+        {% endfor %}
+    });
+</script>
+{% endblock %}
