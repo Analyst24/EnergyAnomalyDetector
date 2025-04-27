@@ -1,8 +1,4 @@
 """
-Results blueprint for viewing analysis results.
+Results module for the Energy Anomaly Detection System.
 """
-from flask import Blueprint
-
-results_bp = Blueprint('results', __name__, url_prefix='/results')
-
-from app.results import routes
+from app.results.routes import results_bp

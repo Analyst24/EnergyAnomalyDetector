@@ -1,8 +1,4 @@
 """
-Recommendations blueprint for energy efficiency recommendations.
+Recommendations module for the Energy Anomaly Detection System.
 """
-from flask import Blueprint
-
-recommendations_bp = Blueprint('recommendations', __name__, url_prefix='/recommendations')
-
-from app.recommendations import routes
+from app.recommendations.routes import recommendations_bp

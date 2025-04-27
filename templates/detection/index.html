@@ -3,190 +3,257 @@
 {% block title %}Run Detection | Energy Anomaly Detection{% endblock %}
 
 {% block page_title %}
-<h1><i class="fas fa-search"></i> Run Anomaly Detection</h1>
+<h1><i class="fas fa-search"></i> Anomaly Detection</h1>
 {% endblock %}
 
 {% block content %}
 <div class="row">
-    <div class="col-lg-8 mb-4">
-        <div class="card">
+    <div class="col-lg-8">
+        <div class="card mb-4">
             <div class="card-header">
-                <h5>Configure Analysis</h5>
+                <h5>Configure Anomaly Detection</h5>
             </div>
             <div class="card-body">
-                <p>Select a dataset and configure an anomaly detection algorithm to analyze your energy consumption data.</p>
-                
                 <form method="POST" action="{{ url_for('detection.run_detection') }}">
                     {{ form.hidden_tag() }}
                     
-                    <div class="mb-4">
-                        <label for="dataset_id" class="form-label">Select Dataset</label>
-                        {{ form.dataset_id(class="form-select", id="dataset_id") }}
-                        {% if form.dataset_id.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.dataset_id.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="name" class="form-label">Analysis Name</label>
-                        {{ form.name(class="form-control", id="name", placeholder="Enter a name for this analysis") }}
-                        {% if form.name.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.name.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="description" class="form-label">Description (optional)</label>
-                        {{ form.description(class="form-control", id="description", placeholder="Enter a description for this analysis", rows=2) }}
-                        {% if form.description.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.description.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="algorithm" class="form-label">Select Algorithm</label>
-                        {{ form.algorithm(class="form-select", id="algorithm") }}
-                        {% if form.algorithm.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.algorithm.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div id="algorithm-params">
-                        <!-- Isolation Forest Parameters -->
-                        <div id="isolation_forest_params" class="algorithm-params">
-                            <h5 class="mt-4 mb-3">Isolation Forest Parameters</h5>
-                            
+                    <div class="row mb-4">
+                        <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="if_n_estimators" class="form-label">Number of Estimators</label>
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <input type="range" class="form-range" id="if_n_estimators_range" min="50" max="500" step="10" value="100" 
-                                               oninput="document.getElementById('if_n_estimators').value = this.value;">
+                                <label for="name" class="form-label">Analysis Name</label>
+                                {{ form.name(class="form-control", id="name", placeholder="Enter a name for this analysis") }}
+                                {% if form.name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.name.errors %}
+                                            {{ error }}
+                                        {% endfor %}
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="input-group">
-                                            <input type="number" class="form-control" id="if_n_estimators" name="if_n_estimators" value="100" min="50" max="500" step="10"
-                                                   oninput="document.getElementById('if_n_estimators_range').value = this.value;">
-                                            <span class="input-group-text">trees</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <small class="text-muted">Number of trees in the forest (higher values increase accuracy but take longer to compute)</small>
+                                {% endif %}
                             </div>
                             
                             <div class="mb-3">
-                                <label for="if_contamination" class="form-label">Contamination Factor</label>
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <input type="range" class="form-range" id="if_contamination_range" min="0.01" max="0.2" step="0.01" value="0.05" 
-                                               oninput="document.getElementById('if_contamination').value = this.value;">
+                                <label for="description" class="form-label">Description (Optional)</label>
+                                {{ form.description(class="form-control", id="description", rows=3, placeholder="Optional description of this analysis") }}
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.description.errors %}
+                                            {{ error }}
+                                        {% endfor %}
                                     </div>
-                                    <div class="col-md-4">
-                                        <input type="number" class="form-control" id="if_contamination" name="if_contamination" value="0.05" min="0.01" max="0.2" step="0.01"
-                                               oninput="document.getElementById('if_contamination_range').value = this.value;">
-                                    </div>
-                                </div>
-                                <small class="text-muted">Expected proportion of anomalies in the dataset</small>
+                                {% endif %}
                             </div>
                         </div>
                         
-                        <!-- AutoEncoder Parameters -->
-                        <div id="autoencoder_params" class="algorithm-params" style="display: none;">
-                            <h5 class="mt-4 mb-3">AutoEncoder Parameters</h5>
-                            
+                        <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="ae_threshold" class="form-label">Anomaly Threshold Percentile</label>
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <input type="range" class="form-range" id="ae_threshold_range" min="90" max="99" step="1" value="95" 
-                                               oninput="document.getElementById('ae_threshold').value = this.value;">
+                                <label for="dataset_id" class="form-label">Select Dataset</label>
+                                {{ form.dataset_id(class="form-select", id="dataset_id") }}
+                                {% if form.dataset_id.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.dataset_id.errors %}
+                                            {{ error }}
+                                        {% endfor %}
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="input-group">
-                                            <input type="number" class="form-control" id="ae_threshold" name="ae_threshold" value="95" min="90" max="99" step="1"
-                                                   oninput="document.getElementById('ae_threshold_range').value = this.value;">
-                                            <span class="input-group-text">%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <small class="text-muted">Percentile threshold for reconstruction error (higher values detect fewer anomalies)</small>
+                                {% endif %}
                             </div>
                             
                             <div class="mb-3">
-                                <label for="ae_components" class="form-label">Number of Components</label>
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <input type="range" class="form-range" id="ae_components_range" min="1" max="10" step="1" value="2" 
-                                               oninput="document.getElementById('ae_components').value = this.value;">
+                                <label for="algorithm" class="form-label">Detection Algorithm</label>
+                                {{ form.algorithm(class="form-select", id="algorithm") }}
+                                {% if form.algorithm.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.algorithm.errors %}
+                                            {{ error }}
+                                        {% endfor %}
                                     </div>
-                                    <div class="col-md-4">
-                                        <input type="number" class="form-control" id="ae_components" name="ae_components" value="2" min="1" max="10" step="1"
-                                               oninput="document.getElementById('ae_components_range').value = this.value;">
-                                    </div>
-                                </div>
-                                <small class="text-muted">Number of components in the dimensionality reduction</small>
-                            </div>
-                        </div>
-                        
-                        <!-- K-Means Parameters -->
-                        <div id="kmeans_params" class="algorithm-params" style="display: none;">
-                            <h5 class="mt-4 mb-3">K-Means Parameters</h5>
-                            
-                            <div class="mb-3">
-                                <label for="km_clusters" class="form-label">Number of Clusters</label>
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <input type="range" class="form-range" id="km_clusters_range" min="2" max="20" step="1" value="5" 
-                                               oninput="document.getElementById('km_clusters').value = this.value;">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <input type="number" class="form-control" id="km_clusters" name="km_clusters" value="5" min="2" max="20" step="1"
-                                               oninput="document.getElementById('km_clusters_range').value = this.value;">
-                                    </div>
-                                </div>
-                                <small class="text-muted">Number of clusters to form in the data</small>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="km_threshold" class="form-label">Anomaly Threshold Percentile</label>
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <input type="range" class="form-range" id="km_threshold_range" min="90" max="99" step="1" value="95" 
-                                               oninput="document.getElementById('km_threshold').value = this.value;">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="input-group">
-                                            <input type="number" class="form-control" id="km_threshold" name="km_threshold" value="95" min="90" max="99" step="1"
-                                                   oninput="document.getElementById('km_threshold_range').value = this.value;">
-                                            <span class="input-group-text">%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <small class="text-muted">Percentile threshold for distance to centroid (higher values detect fewer anomalies)</small>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                     
-                    <div class="d-grid gap-2 mt-4">
+                    <!-- Algorithm Parameters -->
+                    <div class="card mb-4 bg-dark">
+                        <div class="card-header">
+                            <h6 class="mb-0">Algorithm Parameters</h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- Isolation Forest Parameters -->
+                            <div id="isolation_forest_params" class="algorithm-params">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="if_n_estimators" class="form-label">
+                                                Number of Estimators
+                                                <i class="fas fa-info-circle" data-bs-toggle="tooltip" title="Number of base estimators in the ensemble. Higher values typically result in better accuracy but increase computation time."></i>
+                                            </label>
+                                            {{ form.if_n_estimators(class="form-control", id="if_n_estimators") }}
+                                            {% if form.if_n_estimators.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.if_n_estimators.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="if_contamination" class="form-label">
+                                                Contamination Factor
+                                                <i class="fas fa-info-circle" data-bs-toggle="tooltip" title="Expected proportion of anomalies in the dataset. Higher values will detect more anomalies but may increase false positives."></i>
+                                            </label>
+                                            {{ form.if_contamination(class="form-control", id="if_contamination", step="0.01") }}
+                                            {% if form.if_contamination.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.if_contamination.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- AutoEncoder Parameters -->
+                            <div id="autoencoder_params" class="algorithm-params" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="ae_threshold" class="form-label">
+                                                Threshold Percentile
+                                                <i class="fas fa-info-circle" data-bs-toggle="tooltip" title="Percentile used to determine the anomaly threshold. Higher values detect fewer but more significant anomalies."></i>
+                                            </label>
+                                            {{ form.ae_threshold(class="form-control", id="ae_threshold") }}
+                                            {% if form.ae_threshold.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.ae_threshold.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="ae_components" class="form-label">
+                                                Number of Components
+                                                <i class="fas fa-info-circle" data-bs-toggle="tooltip" title="Dimensionality of the encoded space. Lower values increase compression and typically highlight more significant anomalies."></i>
+                                            </label>
+                                            {{ form.ae_components(class="form-control", id="ae_components") }}
+                                            {% if form.ae_components.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.ae_components.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- K-Means Parameters -->
+                            <div id="kmeans_params" class="algorithm-params" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="km_clusters" class="form-label">
+                                                Number of Clusters
+                                                <i class="fas fa-info-circle" data-bs-toggle="tooltip" title="Number of clusters to form. More clusters can capture finer patterns but may reduce anomaly sensitivity."></i>
+                                            </label>
+                                            {{ form.km_clusters(class="form-control", id="km_clusters") }}
+                                            {% if form.km_clusters.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.km_clusters.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="km_threshold" class="form-label">
+                                                Threshold Percentile
+                                                <i class="fas fa-info-circle" data-bs-toggle="tooltip" title="Percentile used to determine the anomaly threshold based on distance to cluster centers."></i>
+                                            </label>
+                                            {{ form.km_threshold(class="form-control", id="km_threshold") }}
+                                            {% if form.km_threshold.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.km_threshold.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
                         {{ form.submit(class="btn btn-primary btn-lg") }}
                     </div>
                 </form>
+            </div>
+        </div>
+        
+        <!-- Algorithm Information Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3 mb-md-0">
+                <div class="card h-100 algorithm-info" id="isolation_forest_info">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">Isolation Forest</h6>
+                    </div>
+                    <div class="card-body">
+                        <p>An ensemble method that isolates observations by randomly selecting features and split values, detecting anomalies as observations requiring fewer splits to isolate.</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                <span class="badge bg-success">Fast</span>
+                                <span class="badge bg-primary">Scalable</span>
+                            </div>
+                            <span data-bs-toggle="tooltip" title="Memory usage"><i class="fas fa-memory me-1"></i>Low</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3 mb-md-0">
+                <div class="card h-100 algorithm-info" id="autoencoder_info" style="display: none;">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">AutoEncoder</h6>
+                    </div>
+                    <div class="card-body">
+                        <p>A neural network approach that learns to compress and reconstruct normal data. Anomalies result in higher reconstruction errors as they don't fit the learned patterns.</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                <span class="badge bg-warning">Complex</span>
+                                <span class="badge bg-primary">Powerful</span>
+                            </div>
+                            <span data-bs-toggle="tooltip" title="Memory usage"><i class="fas fa-memory me-1"></i>High</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 algorithm-info" id="kmeans_info" style="display: none;">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">K-Means Clustering</h6>
+                    </div>
+                    <div class="card-body">
+                        <p>Identifies clusters in the data and flags observations furthest from cluster centers as anomalies, assuming normal data points form clusters while anomalies are isolated.</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                <span class="badge bg-success">Simple</span>
+                                <span class="badge bg-warning">Intuitive</span>
+                            </div>
+                            <span data-bs-toggle="tooltip" title="Memory usage"><i class="fas fa-memory me-1"></i>Medium</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -194,84 +261,59 @@
     <div class="col-lg-4">
         <div class="card mb-4">
             <div class="card-header">
-                <h5><i class="fas fa-info-circle"></i> Algorithm Information</h5>
+                <h5>Recent Analyses</h5>
             </div>
-            <div class="card-body">
-                <div id="algorithm-info">
-                    <!-- Isolation Forest Info -->
-                    <div id="isolation_forest_info" class="algorithm-info">
-                        <h5>Isolation Forest</h5>
-                        <p>Isolation Forest isolates observations by randomly selecting a feature and then randomly selecting a split value between the maximum and minimum values of that feature.</p>
-                        
-                        <h6>Strengths:</h6>
-                        <ul>
-                            <li>Fast and efficient, especially for large datasets</li>
-                            <li>Works well with high-dimensional data</li>
-                            <li>Doesn't require feature scaling</li>
-                        </ul>
-                        
-                        <h6>Best for:</h6>
-                        <p>Detecting sudden spikes or drops in energy consumption that don't follow normal patterns.</p>
+            <div class="card-body p-0">
+                {% if recent_analyses %}
+                    <div class="list-group list-group-flush">
+                        {% for analysis in recent_analyses %}
+                            <a href="{{ url_for('results.view', id=analysis.id) }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ analysis.name }}</h6>
+                                    <small>{{ analysis.created_at.strftime('%Y-%m-%d') }}</small>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <p class="mb-1 text-muted">{{ analysis.dataset_name }}</p>
+                                    <span class="badge bg-primary">{{ analysis.algorithm }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small><i class="fas fa-exclamation-triangle me-1"></i>{{ analysis.anomaly_count }} anomalies</small>
+                                </div>
+                            </a>
+                        {% endfor %}
                     </div>
-                    
-                    <!-- AutoEncoder Info -->
-                    <div id="autoencoder_info" class="algorithm-info" style="display: none;">
-                        <h5>AutoEncoder</h5>
-                        <p>An autoencoder is a type of neural network that learns to compress data and then reconstruct it. Anomalies are points that can't be reconstructed well.</p>
-                        
-                        <h6>Strengths:</h6>
-                        <ul>
-                            <li>Excellent at capturing complex patterns</li>
-                            <li>Can detect subtle anomalies</li>
-                            <li>Works well with temporal dependencies</li>
-                        </ul>
-                        
-                        <h6>Best for:</h6>
-                        <p>Finding complex anomalies that don't fit the learned normal patterns of energy consumption.</p>
+                {% else %}
+                    <div class="p-3">
+                        <p class="text-muted mb-0">No analyses have been run yet.</p>
                     </div>
-                    
-                    <!-- K-Means Info -->
-                    <div id="kmeans_info" class="algorithm-info" style="display: none;">
-                        <h5>K-Means Clustering</h5>
-                        <p>K-Means groups data into clusters, and points far from their cluster centers are considered anomalies.</p>
-                        
-                        <h6>Strengths:</h6>
-                        <ul>
-                            <li>Simple and intuitive</li>
-                            <li>Fast for medium-sized datasets</li>
-                            <li>Works well when data forms natural clusters</li>
-                        </ul>
-                        
-                        <h6>Best for:</h6>
-                        <p>Identifying consumption patterns that don't belong to any of the normal usage clusters.</p>
-                    </div>
-                </div>
+                {% endif %}
             </div>
         </div>
         
         <div class="card">
             <div class="card-header">
-                <h5><i class="fas fa-history"></i> Recent Analyses</h5>
+                <h5>Detection Tips</h5>
             </div>
             <div class="card-body">
-                {% if recent_analyses %}
-                    <div class="list-group">
-                        {% for analysis in recent_analyses %}
-                            <a href="{{ url_for('results.view', id=analysis.id) }}" class="list-group-item list-group-item-action bg-transparent">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">{{ analysis.name }}</h6>
-                                    <small>{{ analysis.created_at.strftime('%Y-%m-%d') }}</small>
-                                </div>
-                                <p class="mb-1">{{ analysis.algorithm }} ({{ analysis.anomaly_count }} anomalies)</p>
-                                <small class="text-muted">Dataset: {{ analysis.dataset_name }}</small>
-                            </a>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="alert alert-info">
-                        No analyses have been run yet. Configure and run your first analysis using the form.
-                    </div>
-                {% endif %}
+                <div class="mb-3">
+                    <h6><i class="fas fa-lightbulb me-2 text-warning"></i>Algorithm Selection</h6>
+                    <p class="text-muted small">Start with Isolation Forest for a quick analysis, then try AutoEncoder for complex patterns or K-Means for clear cluster separation.</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="fas fa-lightbulb me-2 text-warning"></i>Parameter Tuning</h6>
+                    <p class="text-muted small">Begin with default parameters and adjust based on results. Increase contamination factor if too few anomalies are detected.</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="fas fa-lightbulb me-2 text-warning"></i>Dataset Preparation</h6>
+                    <p class="text-muted small">Ensure your dataset has consistent timestamps and consumption values. Include temperature data when available for better correlation analysis.</p>
+                </div>
+                
+                <div>
+                    <h6><i class="fas fa-lightbulb me-2 text-warning"></i>Result Validation</h6>
+                    <p class="text-muted small">Review detected anomalies manually to validate their significance. Mark true anomalies to improve future detection accuracy.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -281,37 +323,36 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Handle algorithm selection
         const algorithmSelect = document.getElementById('algorithm');
-        
-        // Function to show the appropriate algorithm parameters and info
-        function updateAlgorithmUI() {
+        const showAlgorithmParams = function() {
+            // Hide all parameters
+            document.querySelectorAll('.algorithm-params').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Hide all info cards
+            document.querySelectorAll('.algorithm-info').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Show selected parameters and info
             const algorithm = algorithmSelect.value;
-            
-            // Hide all parameter divs
-            document.querySelectorAll('.algorithm-params').forEach(div => {
-                div.style.display = 'none';
-            });
-            
-            // Hide all info divs
-            document.querySelectorAll('.algorithm-info').forEach(div => {
-                div.style.display = 'none';
-            });
-            
-            // Show the selected algorithm's parameters and info
-            if (algorithm) {
-                const paramsDiv = document.getElementById(algorithm + '_params');
-                const infoDiv = document.getElementById(algorithm + '_info');
-                
-                if (paramsDiv) paramsDiv.style.display = 'block';
-                if (infoDiv) infoDiv.style.display = 'block';
-            }
-        }
+            document.getElementById(algorithm + '_params').style.display = 'block';
+            document.getElementById(algorithm + '_info').style.display = 'block';
+        };
         
-        // Update UI when algorithm changes
-        algorithmSelect.addEventListener('change', updateAlgorithmUI);
+        // Initial setup
+        showAlgorithmParams();
         
-        // Initialize UI based on selected algorithm
-        updateAlgorithmUI();
+        // Add change listener
+        algorithmSelect.addEventListener('change', showAlgorithmParams);
+        
+        // Initialize tooltips
+        const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltips.forEach(tooltip => {
+            new bootstrap.Tooltip(tooltip);
+        });
     });
 </script>
 {% endblock %}

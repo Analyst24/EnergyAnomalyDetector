@@ -1,300 +1,349 @@
 """
-Routes for viewing analysis results.
+Results routes for the Energy Anomaly Detection System.
 """
 import os
-import json
 import pandas as pd
-import numpy as np
-from datetime import datetime
-from flask import render_template, redirect, url_for, flash, request, current_app, jsonify, send_file
+import json
+import csv
+from io import StringIO
+from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file, current_app, jsonify
 from flask_login import login_required, current_user
 from app import db
-from app.results import results_bp
 from app.models import Dataset, AnalysisResult, Anomaly
+from datetime import datetime, timedelta
 
+# Create blueprint
+results_bp = Blueprint('results', __name__)
 
-@results_bp.route('/')
+@results_bp.route('/results')
 @login_required
 def index():
-    """View all analysis results."""
-    # Get all user analyses
-    analyses = AnalysisResult.query.filter_by(user_id=current_user.id) \
-                                 .order_by(AnalysisResult.created_at.desc()) \
-                                 .all()
+    """Render the results page."""
+    # Get query parameters for filtering
+    selected_dataset = request.args.get('dataset', type=int)
+    selected_algorithm = request.args.get('algorithm')
+    date_range = request.args.get('date_range')
+    page = request.args.get('page', 1, type=int)
+    per_page = 6  # Number of results per page
     
-    return render_template('results/index.html',
-                          title='Analysis Results',
-                          analyses=analyses)
+    # Get all user datasets for the dropdown
+    datasets = Dataset.query.filter_by(user_id=current_user.id).all()
+    
+    # Base query for analysis results
+    query = AnalysisResult.query.filter_by(user_id=current_user.id)
+    
+    # Apply filters if provided
+    if selected_dataset:
+        query = query.filter_by(dataset_id=selected_dataset)
+    
+    if selected_algorithm:
+        query = query.filter_by(algorithm=selected_algorithm)
+    
+    # Apply date range filter
+    if date_range:
+        if date_range == 'today':
+            since = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            query = query.filter(AnalysisResult.created_at >= since)
+        elif date_range == 'yesterday':
+            yesterday = datetime.now() - timedelta(days=1)
+            yesterday_start = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
+            yesterday_end = yesterday.replace(hour=23, minute=59, second=59, microsecond=999999)
+            query = query.filter(AnalysisResult.created_at.between(yesterday_start, yesterday_end))
+        elif date_range == '7days':
+            since = datetime.now() - timedelta(days=7)
+            query = query.filter(AnalysisResult.created_at >= since)
+        elif date_range == '30days':
+            since = datetime.now() - timedelta(days=30)
+            query = query.filter(AnalysisResult.created_at >= since)
+    
+    # Sort by creation date, newest first
+    query = query.order_by(AnalysisResult.created_at.desc())
+    
+    # Paginate results
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    analyses = pagination.items
+    
+    # Add dataset names to analysis results for display
+    for analysis in analyses:
+        dataset = Dataset.query.get(analysis.dataset_id)
+        if dataset:
+            analysis.dataset_name = dataset.name
+        else:
+            analysis.dataset_name = "Unknown"
+        
+        # Add execution time if available
+        if analysis.result_metrics and 'execution_time' in analysis.result_metrics:
+            analysis.execution_time = analysis.result_metrics['execution_time']
+        else:
+            analysis.execution_time = 'N/A'
+    
+    return render_template(
+        'results/index.html',
+        active_page='results',
+        analyses=analyses,
+        datasets=datasets,
+        selected_dataset=selected_dataset,
+        selected_algorithm=selected_algorithm,
+        date_range=date_range,
+        pagination=pagination
+    )
 
-
-@results_bp.route('/<int:analysis_id>')
+@results_bp.route('/results/<int:id>')
 @login_required
-def view(analysis_id):
+def view(id):
     """View a specific analysis result."""
-    # Get the analysis result
-    analysis = AnalysisResult.query.get_or_404(analysis_id)
+    # Get the analysis
+    analysis = AnalysisResult.query.filter_by(id=id, user_id=current_user.id).first_or_404()
     
-    # Ensure user owns this analysis
-    if analysis.user_id != current_user.id:
-        flash('You do not have permission to view this analysis.', 'danger')
-        return redirect(url_for('results.index'))
+    # Add dataset name to analysis
+    dataset = Dataset.query.get(analysis.dataset_id)
+    if dataset:
+        analysis.dataset_name = dataset.name
+    else:
+        analysis.dataset_name = "Unknown"
     
-    # Get the dataset
-    dataset = Dataset.query.get_or_404(analysis.dataset_id)
+    # Get metrics if available
+    metrics = None
+    if analysis.result_metrics:
+        metrics = {
+            'precision': analysis.result_metrics.get('precision', 0),
+            'recall': analysis.result_metrics.get('recall', 0),
+            'f1_score': analysis.result_metrics.get('f1_score', 0),
+            'auc': analysis.result_metrics.get('auc', 0),
+            'execution_time': analysis.result_metrics.get('execution_time', 'N/A')
+        }
     
-    # Get anomalies
-    anomalies = Anomaly.query.filter_by(analysis_result_id=analysis_id) \
-                           .order_by(Anomaly.score.desc()) \
-                           .all()
+    # Get anomalies with pagination
+    page = request.args.get('page', 1, type=int)
+    per_page = 10  # Number of anomalies per page
     
-    # Load dataset preview if available
-    preview_data = None
-    columns = []
-    try:
-        if os.path.exists(dataset.file_path):
-            # Get file extension
-            _, ext = os.path.splitext(dataset.filename)
-            ext = ext.lower()
-            
-            if ext == '.csv':
-                df = pd.read_csv(dataset.file_path)
-            elif ext in ['.xlsx', '.xls']:
-                df = pd.read_excel(dataset.file_path)
-            elif ext == '.json':
-                df = pd.read_json(dataset.file_path)
-            elif ext == '.txt':
-                df = pd.read_csv(dataset.file_path, sep=None, engine='python')
-            
-            # Get preview data
-            preview_data = df.head(10).to_dict('records')
-            columns = df.columns.tolist()
-    except Exception as e:
-        flash(f'Error loading dataset preview: {str(e)}', 'warning')
+    # Paginate anomalies
+    pagination = Anomaly.query.filter_by(analysis_result_id=analysis.id).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    anomalies = pagination.items
     
-    # Convert parameters to display format
-    algorithm_params = {}
-    if analysis.parameters:
-        algorithm_params = analysis.parameters
+    # Process anomalies for display
+    for anomaly in anomalies:
+        # Extract key values for display
+        if anomaly.feature_values:
+            if 'consumption' in anomaly.feature_values:
+                anomaly.value = anomaly.feature_values['consumption']
+            else:
+                # If consumption is not available, use the first value
+                anomaly.value = next(iter(anomaly.feature_values.values()))
+        else:
+            anomaly.value = 'N/A'
     
-    return render_template('results/view.html',
-                          title=f'Analysis: {analysis.name}',
-                          analysis=analysis,
-                          dataset=dataset,
-                          anomalies=anomalies,
-                          preview_data=preview_data,
-                          columns=columns,
-                          algorithm_params=algorithm_params)
+    return render_template(
+        'results/view.html',
+        active_page='results',
+        analysis=analysis,
+        metrics=metrics,
+        anomalies=anomalies,
+        pagination=pagination
+    )
 
-
-@results_bp.route('/<int:analysis_id>/anomaly/<int:anomaly_id>')
+@results_bp.route('/results/anomaly/<int:id>')
 @login_required
-def view_anomaly(analysis_id, anomaly_id):
-    """View details of a specific anomaly."""
-    # Get the analysis result
-    analysis = AnalysisResult.query.get_or_404(analysis_id)
-    
-    # Ensure user owns this analysis
-    if analysis.user_id != current_user.id:
-        flash('You do not have permission to view this analysis.', 'danger')
-        return redirect(url_for('results.index'))
-    
+def view_anomaly(id):
+    """View a specific anomaly."""
     # Get the anomaly
-    anomaly = Anomaly.query.get_or_404(anomaly_id)
+    anomaly = Anomaly.query.filter_by(id=id).first_or_404()
     
-    # Ensure anomaly belongs to this analysis
-    if anomaly.analysis_result_id != analysis_id:
-        flash('Anomaly does not belong to this analysis.', 'danger')
-        return redirect(url_for('results.view', analysis_id=analysis_id))
+    # Check if the user has access to this anomaly
+    analysis = AnalysisResult.query.filter_by(id=anomaly.analysis_result_id, user_id=current_user.id).first_or_404()
     
-    # Get the dataset
-    dataset = Dataset.query.get_or_404(analysis.dataset_id)
+    # Add dataset name to analysis
+    dataset = Dataset.query.get(analysis.dataset_id)
+    if dataset:
+        analysis.dataset_name = dataset.name
+    else:
+        analysis.dataset_name = "Unknown"
     
-    # Load dataset if available to get context
+    # Get the original data context if available
     context_data = None
-    try:
-        if os.path.exists(dataset.file_path):
-            # Get file extension
-            _, ext = os.path.splitext(dataset.filename)
-            ext = ext.lower()
+    if dataset and os.path.exists(dataset.file_path):
+        try:
+            df = pd.read_csv(dataset.file_path)
             
-            if ext == '.csv':
-                df = pd.read_csv(dataset.file_path)
-            elif ext in ['.xlsx', '.xls']:
-                df = pd.read_excel(dataset.file_path)
-            elif ext == '.json':
-                df = pd.read_json(dataset.file_path)
-            elif ext == '.txt':
-                df = pd.read_csv(dataset.file_path, sep=None, engine='python')
-            
-            # Try to get context around the anomaly
+            # Get the index of the anomaly in the original data
             anomaly_index = anomaly.index
             
-            # Get rows before and after the anomaly
-            start_idx = max(0, anomaly_index - 2)
-            end_idx = min(len(df), anomaly_index + 3)
+            # Get a window of data around the anomaly
+            start_idx = max(0, anomaly_index - 5)
+            end_idx = min(len(df), anomaly_index + 6)
             
-            # Extract context rows
-            context_df = df.iloc[start_idx:end_idx]
-            context_data = context_df.to_dict('records')
+            context_data = df.iloc[start_idx:end_idx].to_dict('records')
             
-            # Highlight the anomaly row
-            anomaly_row_idx = anomaly_index - start_idx
-    except Exception as e:
-        flash(f'Error loading context data: {str(e)}', 'warning')
+            # Mark the anomaly row
+            for i, row in enumerate(context_data):
+                if start_idx + i == anomaly_index:
+                    row['_is_anomaly'] = True
+                else:
+                    row['_is_anomaly'] = False
+        except Exception as e:
+            flash(f'Error loading context data: {str(e)}', 'warning')
     
-    # Convert feature values to display format
-    feature_values = {}
-    if anomaly.feature_values:
-        feature_values = anomaly.feature_values
-    
-    return render_template('results/view_anomaly.html',
-                          title=f'Anomaly Details',
-                          anomaly=anomaly,
-                          analysis=analysis,
-                          dataset=dataset,
-                          feature_values=feature_values,
-                          context_data=context_data,
-                          anomaly_index=anomaly_index if 'anomaly_index' in locals() else None,
-                          anomaly_row_idx=anomaly_row_idx if 'anomaly_row_idx' in locals() else None)
+    return render_template(
+        'results/anomaly.html',
+        active_page='results',
+        anomaly=anomaly,
+        analysis=analysis,
+        context_data=context_data
+    )
 
-
-@results_bp.route('/<int:analysis_id>/export')
+@results_bp.route('/results/validate/<int:id>', methods=['POST'])
 @login_required
-def export(analysis_id):
-    """Export analysis results."""
-    # Get the analysis result
-    analysis = AnalysisResult.query.get_or_404(analysis_id)
+def validate_anomaly(id):
+    """Validate an anomaly."""
+    # Get the anomaly
+    anomaly = Anomaly.query.filter_by(id=id).first_or_404()
     
-    # Ensure user owns this analysis
-    if analysis.user_id != current_user.id:
-        flash('You do not have permission to export this analysis.', 'danger')
-        return redirect(url_for('results.index'))
+    # Check if the user has access to this anomaly
+    analysis = AnalysisResult.query.filter_by(id=anomaly.analysis_result_id, user_id=current_user.id).first_or_404()
     
-    # Get the dataset
-    dataset = Dataset.query.get_or_404(analysis.dataset_id)
+    # Get validation status
+    is_true_anomaly = request.form.get('is_true_anomaly') == 'true'
     
-    # Get anomalies
-    anomalies = Anomaly.query.filter_by(analysis_result_id=analysis_id).all()
+    # Update anomaly
+    anomaly.is_validated = True
+    anomaly.is_true_anomaly = is_true_anomaly
     
-    # Export format can be CSV, JSON, or Excel
-    export_format = request.args.get('format', 'csv')
+    # Save to database
+    db.session.commit()
+    
+    # Return to the previous page
+    flash('Anomaly validation saved', 'success')
+    return redirect(url_for('results.view', id=analysis.id))
+
+@results_bp.route('/results/download/<int:id>')
+@login_required
+def download_csv(id):
+    """Download analysis results as CSV."""
+    # Get the analysis
+    analysis = AnalysisResult.query.filter_by(id=id, user_id=current_user.id).first_or_404()
+    
+    # Get dataset name
+    dataset = Dataset.query.get(analysis.dataset_id)
+    dataset_name = dataset.name if dataset else "Unknown"
+    
+    # Get all anomalies for this analysis
+    anomalies = Anomaly.query.filter_by(analysis_result_id=analysis.id).all()
+    
+    # Create CSV file in memory
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    header = ['index', 'timestamp', 'score']
+    
+    # Add feature columns
+    feature_columns = set()
+    for anomaly in anomalies:
+        if anomaly.feature_values:
+            feature_columns.update(anomaly.feature_values.keys())
+    
+    header.extend(sorted(feature_columns))
+    writer.writerow(header)
+    
+    # Write data rows
+    for anomaly in anomalies:
+        row = [anomaly.index]
+        
+        # Add timestamp
+        if anomaly.timestamp:
+            row.append(anomaly.timestamp.strftime('%Y-%m-%d %H:%M:%S'))
+        else:
+            row.append('')
+        
+        # Add score
+        row.append(anomaly.score)
+        
+        # Add feature values
+        for col in sorted(feature_columns):
+            if anomaly.feature_values and col in anomaly.feature_values:
+                row.append(anomaly.feature_values[col])
+            else:
+                row.append('')
+        
+        writer.writerow(row)
+    
+    # Prepare the response
+    output.seek(0)
+    
+    # Generate filename
+    filename = f"anomalies_{analysis.algorithm}_{datetime.now().strftime('%Y%m%d')}.csv"
+    
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=filename,
+        mimetype='text/csv'
+    )
+
+@results_bp.route('/results/data/<int:id>')
+@login_required
+def get_chart_data(id):
+    """Get data for chart visualization."""
+    # Get the analysis
+    analysis = AnalysisResult.query.filter_by(id=id, user_id=current_user.id).first_or_404()
+    
+    # Get dataset
+    dataset = Dataset.query.get(analysis.dataset_id)
+    if not dataset or not os.path.exists(dataset.file_path):
+        return jsonify({'error': 'Dataset not found'}), 404
     
     try:
-        # Load original dataset
-        if not os.path.exists(dataset.file_path):
-            flash('Original dataset file not found.', 'danger')
-            return redirect(url_for('results.view', analysis_id=analysis_id))
+        # Load dataset
+        df = pd.read_csv(dataset.file_path)
         
-        # Get file extension
-        _, ext = os.path.splitext(dataset.filename)
-        ext = ext.lower()
+        # Parse timestamp if available
+        if 'timestamp' in df.columns:
+            df['timestamp'] = pd.to_datetime(df['timestamp'])
         
-        if ext == '.csv':
-            df = pd.read_csv(dataset.file_path)
-        elif ext in ['.xlsx', '.xls']:
-            df = pd.read_excel(dataset.file_path)
-        elif ext == '.json':
-            df = pd.read_json(dataset.file_path)
-        elif ext == '.txt':
-            df = pd.read_csv(dataset.file_path, sep=None, engine='python')
+        # Get anomalies
+        anomalies = Anomaly.query.filter_by(analysis_result_id=analysis.id).all()
+        anomaly_indices = [a.index for a in anomalies]
         
-        # Add anomaly column
-        df['anomaly'] = 0
-        df['anomaly_score'] = 0
+        # Prepare data for chart
+        data = {
+            'timestamps': [],
+            'consumption': [],
+            'anomalies': []
+        }
         
-        # Set anomaly flags and scores
-        for anomaly in anomalies:
-            if 0 <= anomaly.index < len(df):
-                df.loc[anomaly.index, 'anomaly'] = 1
-                df.loc[anomaly.index, 'anomaly_score'] = anomaly.score
+        # Extract timestamps and consumption
+        if 'timestamp' in df.columns and 'consumption' in df.columns:
+            data['timestamps'] = df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S').tolist()
+            data['consumption'] = df['consumption'].tolist()
+            
+            # Mark anomalies
+            data['anomalies'] = [{'x': data['timestamps'][idx], 'y': data['consumption'][idx]} 
+                               for idx in anomaly_indices if idx < len(df)]
+            
+        return jsonify(data)
         
-        # Generate export filename
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        export_filename = f"anomaly_results_{timestamp}"
-        
-        # Set content type and file extension based on format
-        if export_format == 'csv':
-            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], f"{export_filename}.csv")
-            df.to_csv(file_path, index=False)
-            return send_file(file_path, as_attachment=True, download_name=f"{export_filename}.csv")
-        
-        elif export_format == 'excel':
-            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], f"{export_filename}.xlsx")
-            df.to_excel(file_path, index=False)
-            return send_file(file_path, as_attachment=True, download_name=f"{export_filename}.xlsx")
-        
-        elif export_format == 'json':
-            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], f"{export_filename}.json")
-            df.to_json(file_path, orient='records')
-            return send_file(file_path, as_attachment=True, download_name=f"{export_filename}.json")
-        
-        else:
-            flash('Invalid export format.', 'danger')
-            return redirect(url_for('results.view', analysis_id=analysis_id))
-    
     except Exception as e:
-        flash(f'Error exporting results: {str(e)}', 'danger')
-        return redirect(url_for('results.view', analysis_id=analysis_id))
+        return jsonify({'error': str(e)}), 500
 
-
-@results_bp.route('/<int:analysis_id>/delete', methods=['POST'])
+@results_bp.route('/results/delete/<int:id>')
 @login_required
-def delete(analysis_id):
+def delete(id):
     """Delete an analysis result."""
-    # Get the analysis result
-    analysis = AnalysisResult.query.get_or_404(analysis_id)
-    
-    # Ensure user owns this analysis
-    if analysis.user_id != current_user.id:
-        flash('You do not have permission to delete this analysis.', 'danger')
-        return redirect(url_for('results.index'))
+    # Get the analysis
+    analysis = AnalysisResult.query.filter_by(id=id, user_id=current_user.id).first_or_404()
     
     try:
         # Delete all associated anomalies
-        Anomaly.query.filter_by(analysis_result_id=analysis_id).delete()
+        Anomaly.query.filter_by(analysis_result_id=analysis.id).delete()
         
         # Delete the analysis
         db.session.delete(analysis)
         db.session.commit()
         
-        flash('Analysis deleted successfully.', 'success')
-        return redirect(url_for('results.index'))
-    
+        flash('Analysis deleted successfully', 'success')
     except Exception as e:
-        db.session.rollback()
         flash(f'Error deleting analysis: {str(e)}', 'danger')
-        return redirect(url_for('results.view', analysis_id=analysis_id))
-
-
-@results_bp.route('/<int:analysis_id>/api/anomalies')
-@login_required
-def api_anomalies(analysis_id):
-    """API endpoint to get anomalies for a specific analysis."""
-    # Get the analysis result
-    analysis = AnalysisResult.query.get_or_404(analysis_id)
     
-    # Ensure user owns this analysis
-    if analysis.user_id != current_user.id:
-        return jsonify({'error': 'Permission denied'}), 403
-    
-    # Get anomalies
-    anomalies = Anomaly.query.filter_by(analysis_result_id=analysis_id).all()
-    
-    # Convert to JSON
-    anomalies_data = []
-    for anomaly in anomalies:
-        # Convert datetime to string to ensure JSON serializable
-        timestamp_str = None
-        if anomaly.timestamp:
-            timestamp_str = anomaly.timestamp.isoformat()
-        
-        anomalies_data.append({
-            'id': anomaly.id,
-            'timestamp': timestamp_str,
-            'index': anomaly.index,
-            'score': float(anomaly.score),
-            'is_validated': anomaly.is_validated,
-            'is_true_anomaly': anomaly.is_true_anomaly
-        })
-    
-    return jsonify({'anomalies': anomalies_data})
+    return redirect(url_for('results.index'))
