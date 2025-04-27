@@ -7,6 +7,16 @@ import plotly.figure_factory as ff
 from datetime import datetime, timedelta
 from streamlit_extras.colored_header import colored_header
 
+# Import handling for both direct and package imports
+import sys
+import os
+
+# Determine if the script is being run directly
+if __name__ == "__main__" or os.path.basename(sys.argv[0]) == "pages":
+    # If running directly, add the parent directory to sys.path
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Now we can import from the project packages
 from utils.auth import is_authenticated
 from utils.visualization import plot_consumption_overview, plot_anomaly_distribution
 from styles.custom import apply_custom_styles

@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import sys
 import pandas as pd
 import numpy as np
 import time
@@ -8,6 +9,11 @@ from PIL import Image
 import plotly.express as px
 import plotly.graph_objects as go
 from streamlit_extras.colored_header import colored_header
+
+# Ensure path is set correctly for imports to work in any environment
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
 
 from utils.auth import (
     login_user, create_user, verify_password, get_users, 
@@ -309,7 +315,7 @@ def signup_page():
         else:
             # Create the new user with database support
             try:
-                if create_user(username, password, full_name, role="User", email=email):
+                if create_user(username, email, password, full_name, role="User"):
                     st.success("Account created successfully! You can now log in.")
                     st.session_state.show_signup = False
                     time.sleep(1)
