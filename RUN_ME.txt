@@ -1,0 +1,45 @@
+======================================
+ENERGY ANOMALY DETECTION SYSTEM - OFFLINE MODE
+======================================
+
+To run this application on your local machine, please follow these steps:
+
+1. SQLITE DATABASE MODE:
+   The system will automatically use SQLite database when no PostgreSQL connection is available.
+   The database file will be created in the main directory as "energy_anomaly_detection.db"
+
+2. RUN THE APPLICATION: 
+   Open a command prompt or terminal in this directory and run:
+   
+   streamlit run app.py
+   
+   If that doesn't work, try:
+   
+   python -m streamlit run app.py
+
+3. ACCESS THE APPLICATION:
+   Once running, the application will be available at:
+   
+   http://localhost:8501
+   
+   (Note: Streamlit uses port 8501 by default in local mode, not 5000)
+
+4. LOGIN CREDENTIALS:
+   Default admin user:
+   - Username: admin
+   - Password: admin123
+   
+   Default demo user:
+   - Username: demo
+   - Password: demo123
+
+5. TROUBLESHOOTING:
+   If you encounter any issues:
+   - Make sure you have all required packages installed (see requirements.txt)
+   - Check that Python can find all modules (don't run from inside subdirectories)
+   - Try running with --browser.serverAddress=127.0.0.1 if localhost doesn't work:
+     streamlit run app.py --browser.serverAddress=127.0.0.1
+   
+   For more help, check the documentation or contact support.
+
+======================================

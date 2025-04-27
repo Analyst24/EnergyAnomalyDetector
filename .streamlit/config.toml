@@ -1,8 +1,11 @@
 [server]
-headless = true
-address = "0.0.0.0"
-port = 5000
-enableCORS = false
+# When running in Replit or server environments
+# headless = true
+# address = "0.0.0.0"
+# port = 5000
+
+# For local development, using default settings works better
+enableCORS = true
 enableXsrfProtection = true
 enableWebsocketCompression = true
 

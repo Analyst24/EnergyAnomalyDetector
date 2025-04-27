@@ -1,0 +1,42 @@
+======================================
+ENERGY ANOMALY DETECTION SYSTEM - INSTALLATION GUIDE
+======================================
+
+To install the application dependencies on your local machine, please follow these steps:
+
+1. Required Python Packages:
+   
+   streamlit==1.32.0 or later
+   pandas==2.1.4 or later
+   numpy==1.26.4 or later
+   scikit-learn==1.4.0 or later
+   plotly==5.18.0 or later
+   sqlalchemy==2.0.27 or later
+   pillow==10.1.0 or later
+   streamlit-extras==0.3.6 or later
+   seaborn==0.13.0 or later
+   tensorflow==2.15.0 or later
+
+2. Installation Command:
+   Open a command prompt or terminal and run:
+   
+   pip install streamlit pandas numpy scikit-learn plotly sqlalchemy pillow streamlit-extras seaborn tensorflow
+   
+   Or if you want specific versions:
+   
+   pip install streamlit==1.32.0 pandas==2.1.4 numpy==1.26.4 scikit-learn==1.4.0 plotly==5.18.0 sqlalchemy==2.0.27 pillow==10.1.0 streamlit-extras==0.3.6 seaborn==0.13.0 tensorflow==2.15.0
+
+3. Verify Installation:
+   After installation, you can verify the packages are installed correctly by running:
+   
+   pip list
+
+4. First Run:
+   Once dependencies are installed, follow the instructions in RUN_ME.txt to start the application.
+   
+5. IMPORTANT NOTE FOR OFFLINE USE:
+   - This application is designed to work offline
+   - No internet connection is required once dependencies are installed
+   - All data is stored locally in a SQLite database file
+
+======================================

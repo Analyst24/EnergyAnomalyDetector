@@ -11,15 +11,17 @@ from sqlalchemy.exc import SQLAlchemyError
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Check if running in environment with PostgreSQL (like Replit)
-if os.environ.get('DATABASE_URL'):
-    # Use PostgreSQL if available
-    DATABASE_URL = os.environ.get('DATABASE_URL')
-    logger.info("Using PostgreSQL database")
-else:
+# Always prefer SQLite for offline use
+USE_SQLITE = True
+
+if USE_SQLITE or not os.environ.get('DATABASE_URL'):
     # Use local SQLite database for offline mode
     DATABASE_URL = "sqlite:///./energy_anomaly_detection.db"
     logger.info("Using local SQLite database for offline mode")
+else:
+    # Use PostgreSQL if explicitly configured and available
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    logger.info("Using PostgreSQL database")
 
 # Create engine
 try:

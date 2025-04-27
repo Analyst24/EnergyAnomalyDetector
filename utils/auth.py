@@ -137,9 +137,14 @@ def get_users() -> List[Dict]:
         List[Dict]: List of user data dictionaries
     """
     try:
-        db = get_db_session()
+        # Handle the generator pattern from get_db_session
+        db_gen = get_db_session()
+        db = next(db_gen)
+        
         users = db.query(User).all()
-        return [
+        
+        # Convert to list of dictionaries
+        result = [
             {
                 "id": user.id,
                 "username": user.username,
@@ -149,6 +154,14 @@ def get_users() -> List[Dict]:
             }
             for user in users
         ]
+        
+        # Close the session (next will be handled by the generator's finally block)
+        try:
+            next(db_gen)
+        except StopIteration:
+            pass
+            
+        return result
     except Exception as e:
         st.error(f"Error getting users: {str(e)}")
         return []
