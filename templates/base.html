@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Energy Anomaly Detection System{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="dark-theme">
+    {% if current_user.is_authenticated and not hide_sidebar %}
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="active">
+            <div class="sidebar-header">
+                <h3>⚡ Energy Analytics</h3>
+            </div>
+
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="user-details">
+                    <h6>{{ current_user.full_name }}</h6>
+                    <span>{{ current_user.email }}</span>
+                </div>
+            </div>
+
+            <ul class="list-unstyled components">
+                <li {% if active_page == 'home' %}class="active"{% endif %}>
+                    <a href="{{ url_for('main.index') }}">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                </li>
+                <li {% if active_page == 'dashboard' %}class="active"{% endif %}>
+                    <a href="{{ url_for('dashboard.index') }}">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li {% if active_page == 'upload' %}class="active"{% endif %}>
+                    <a href="{{ url_for('upload.index') }}">
+                        <i class="fas fa-upload"></i> Upload Data
+                    </a>
+                </li>
+                <li {% if active_page == 'detection' %}class="active"{% endif %}>
+                    <a href="{{ url_for('detection.index') }}">
+                        <i class="fas fa-search"></i> Run Detection
+                    </a>
+                </li>
+                <li {% if active_page == 'results' %}class="active"{% endif %}>
+                    <a href="{{ url_for('results.index') }}">
+                        <i class="fas fa-chart-bar"></i> Results
+                    </a>
+                </li>
+                <li {% if active_page == 'insights' %}class="active"{% endif %}>
+                    <a href="{{ url_for('insights.index') }}">
+                        <i class="fas fa-lightbulb"></i> Model Insights
+                    </a>
+                </li>
+                <li {% if active_page == 'recommendations' %}class="active"{% endif %}>
+                    <a href="{{ url_for('recommendations.index') }}">
+                        <i class="fas fa-clipboard-list"></i> Recommendations
+                    </a>
+                </li>
+                <li {% if active_page == 'settings' %}class="active"{% endif %}>
+                    <a href="{{ url_for('settings.index') }}">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Page Content -->
+        <div id="content">
+            <nav class="navbar navbar-expand-lg">
+                <div class="container-fluid">
+                    <button type="button" id="sidebarCollapse" class="btn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="navbar-title">
+                        {% block page_title %}{% endblock %}
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container-fluid content-wrapper">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </div>
+
+            <!-- Footer -->
+            <footer class="footer mt-auto py-3">
+                <div class="container">
+                    <div class="text-center">
+                        © 2025 Opulent Chikwiramakomo. All rights reserved.
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+    {% else %}
+    <div class="auth-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block auth_content %}{% endblock %}
+    </div>
+    {% endif %}
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

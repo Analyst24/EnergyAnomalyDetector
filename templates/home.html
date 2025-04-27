@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Home | Energy Anomaly Detection{% endblock %}
+
+{% block page_title %}
+<h1>⚡ Energy Anomaly Detection System</h1>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">Welcome, {{ current_user.full_name }}</h2>
+                <p>This system helps you detect anomalies in energy consumption data using advanced machine learning algorithms.</p>
+                <p>Use the navigation menu to explore various features of the system.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="chart-container">
+            <h3 class="chart-title"><i class="fas fa-chart-line"></i> Real-time Energy Monitoring</h3>
+            <div id="energy-chart" class="plotly-chart" style="height: 400px;"></div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-lightbulb"></i> Quick Start</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item bg-transparent">
+                        <a href="{{ url_for('upload.index') }}" class="text-decoration-none">
+                            <i class="fas fa-upload me-2"></i> Upload Data
+                        </a>
+                    </li>
+                    <li class="list-group-item bg-transparent">
+                        <a href="{{ url_for('detection.index') }}" class="text-decoration-none">
+                            <i class="fas fa-search me-2"></i> Run Detection
+                        </a>
+                    </li>
+                    <li class="list-group-item bg-transparent">
+                        <a href="{{ url_for('results.index') }}" class="text-decoration-none">
+                            <i class="fas fa-chart-bar me-2"></i> View Results
+                        </a>
+                    </li>
+                    <li class="list-group-item bg-transparent">
+                        <a href="{{ url_for('recommendations.index') }}" class="text-decoration-none">
+                            <i class="fas fa-clipboard-list me-2"></i> Get Recommendations
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h3 class="mb-4">System Features</h3>
+    </div>
+    
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="feature-icon mb-3">
+                    <i class="fas fa-chart-bar fa-3x text-primary"></i>
+                </div>
+                <h4 class="card-title">Data Visualization</h4>
+                <p class="card-text">Interactive dashboards showing energy consumption patterns and anomalies.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="feature-icon mb-3">
+                    <i class="fas fa-search fa-3x text-primary"></i>
+                </div>
+                <h4 class="card-title">Anomaly Detection</h4>
+                <p class="card-text">Advanced ML algorithms to identify unusual energy consumption patterns.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="feature-icon mb-3">
+                    <i class="fas fa-lightbulb fa-3x text-primary"></i>
+                </div>
+                <h4 class="card-title">Smart Recommendations</h4>
+                <p class="card-text">Get actionable insights to improve energy efficiency based on detected anomalies.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sample data for the energy chart
+        const dates = [];
+        const consumption = [];
+        const anomalies = [];
+        const anomalyPoints = [];
+        
+        // Generate 100 data points
+        const now = new Date();
+        for (let i = 0; i < 100; i++) {
+            const date = new Date(now.getTime() - (99 - i) * 3600000);
+            dates.push(date);
+            
+            // Generate consumption data with a sine wave pattern
+            const base = 100 + 30 * Math.sin(i * 0.04 * Math.PI);
+            const noise = Math.random() * 10 - 5;
+            let anomalyValue = 0;
+            
+            // Add some anomalies
+            if (i === 20 || i === 45 || i === 68 || i === 90) {
+                anomalyValue = (i % 2 === 0) ? 40 : -30;
+                anomalies.push(1);
+                anomalyPoints.push({
+                    x: date,
+                    y: base + noise + anomalyValue
+                });
+            } else {
+                anomalies.push(0);
+            }
+            
+            consumption.push(base + noise + anomalyValue);
+        }
+        
+        // Create the energy chart
+        const chartData = [{
+            x: dates,
+            y: consumption,
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Energy Consumption',
+            line: {
+                color: '#4b7bec',
+                width: 2
+            }
+        }];
+        
+        // Add anomaly points
+        if (anomalyPoints.length > 0) {
+            chartData.push({
+                x: anomalyPoints.map(p => p.x),
+                y: anomalyPoints.map(p => p.y),
+                type: 'scatter',
+                mode: 'markers',
+                name: 'Anomalies',
+                marker: {
+                    size: 12,
+                    color: '#fc5c65',
+                    symbol: 'circle'
+                }
+            });
+        }
+        
+        const layout = {
+            title: 'Energy Consumption Pattern',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0.2)',
+            font: { color: '#dfe4ea' },
+            margin: { l: 50, r: 50, t: 50, b: 50 },
+            xaxis: {
+                title: 'Time',
+                showgrid: true,
+                gridcolor: 'rgba(255,255,255,0.1)'
+            },
+            yaxis: {
+                title: 'Energy Usage (kWh)',
+                showgrid: true,
+                gridcolor: 'rgba(255,255,255,0.1)'
+            },
+            legend: {
+                orientation: 'h',
+                y: 1.1
+            }
+        };
+        
+        const config = {
+            responsive: true
+        };
+        
+        Plotly.newPlot('energy-chart', chartData, layout, config);
+    });
+</script>
+{% endblock %}

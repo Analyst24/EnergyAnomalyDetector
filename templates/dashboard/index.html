@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Energy Anomaly Detection{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-tachometer-alt"></i> Energy Dashboard</h1>
+{% endblock %}
+
+{% block content %}
+<!-- Summary metrics row -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <div class="metric-value" id="total-consumption">{{ total_consumption | default('0.00') }}</div>
+            <div class="metric-label">Total Energy Consumption (kWh)</div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="metric-value" id="anomaly-count">{{ anomaly_count | default('0') }}</div>
+            <div class="metric-label">Detected Anomalies</div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-percentage"></i>
+            </div>
+            <div class="metric-value" id="anomaly-percentage">{{ anomaly_percentage | default('0.0') }}%</div>
+            <div class="metric-label">Anomaly Percentage</div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="metric-value" id="time-period">{{ time_period | default('N/A') }}</div>
+            <div class="metric-label">Time Period</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter controls -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="fas fa-filter"></i> Filters</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('dashboard.index') }}" class="row">
+            <div class="col-md-3 mb-3">
+                <label for="dataset" class="form-label">Dataset</label>
+                <select class="form-select" id="dataset" name="dataset">
+                    <option value="">All Datasets</option>
+                    {% for dataset in datasets %}
+                        <option value="{{ dataset.id }}" {% if selected_dataset == dataset.id %}selected{% endif %}>
+                            {{ dataset.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <label for="timeframe" class="form-label">Time Period</label>
+                <select class="form-select" id="timeframe" name="timeframe">
+                    <option value="day" {% if timeframe == 'day' %}selected{% endif %}>Last 24 Hours</option>
+                    <option value="week" {% if timeframe == 'week' %}selected{% endif %}>Last Week</option>
+                    <option value="month" {% if timeframe == 'month' %}selected{% endif %}>Last Month</option>
+                    <option value="year" {% if timeframe == 'year' %}selected{% endif %}>Last Year</option>
+                    <option value="all" {% if timeframe == 'all' %}selected{% endif %}>All Time</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <label for="algorithm" class="form-label">Algorithm</label>
+                <select class="form-select" id="algorithm" name="algorithm">
+                    <option value="">All Algorithms</option>
+                    <option value="isolation_forest" {% if algorithm == 'isolation_forest' %}selected{% endif %}>Isolation Forest</option>
+                    <option value="autoencoder" {% if algorithm == 'autoencoder' %}selected{% endif %}>AutoEncoder</option>
+                    <option value="kmeans" {% if algorithm == 'kmeans' %}selected{% endif %}>K-Means</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Main charts -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="chart-container">
+            <h3 class="chart-title"><i class="fas fa-chart-line"></i> Energy Consumption Over Time</h3>
+            <div id="consumption-chart" class="plotly-chart" style="height: 400px;"></div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+        <div class="chart-container">
+            <h3 class="chart-title"><i class="fas fa-chart-pie"></i> Anomaly Distribution</h3>
+            <div id="anomaly-pie-chart" class="plotly-chart" style="height: 400px;"></div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <h3 class="chart-title"><i class="fas fa-clock"></i> Time of Day Analysis</h3>
+            <div id="time-of-day-chart" class="plotly-chart" style="height: 350px;"></div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <h3 class="chart-title"><i class="fas fa-th"></i> Heat Map</h3>
+            <div id="heat-map-chart" class="plotly-chart" style="height: 350px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent anomalies table -->
+<div class="card">
+    <div class="card-header">
+        <h5><i class="fas fa-exclamation-triangle"></i> Recent Anomalies</h5>
+    </div>
+    <div class="card-body">
+        {% if recent_anomalies %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Value</th>
+                            <th>Score</th>
+                            <th>Algorithm</th>
+                            <th>Dataset</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for anomaly in recent_anomalies %}
+                            <tr>
+                                <td>{{ anomaly.timestamp }}</td>
+                                <td>{{ anomaly.value }}</td>
+                                <td>{{ anomaly.score }}</td>
+                                <td>{{ anomaly.algorithm }}</td>
+                                <td>{{ anomaly.dataset_name }}</td>
+                                <td>
+                                    <a href="{{ url_for('results.view_anomaly', id=anomaly.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                No anomalies detected yet. Upload data and run detection algorithms to see results here.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sample data for charts
+        const timestamps = [];
+        const consumptionValues = [];
+        const normalValues = [];
+        const anomalyValues = [];
+        
+        // Generate dates for the past month
+        const now = new Date();
+        for (let i = 30; i >= 0; i--) {
+            const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+            timestamps.push(date);
+            
+            // Generate consumption with weekly patterns and random anomalies
+            const dayOfWeek = date.getDay();
+            let baseConsumption = 100;
+            
+            // Weekend pattern
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                baseConsumption = 150;
+            }
+            
+            // Add some cyclical patterns
+            baseConsumption += 30 * Math.sin(i * 0.2);
+            
+            // Add random noise
+            const noise = Math.random() * 20 - 10;
+            
+            // Add anomalies on specific days
+            let value = baseConsumption + noise;
+            if (i === 5 || i === 12 || i === 25) {
+                value += (i === 12) ? -60 : 100;
+                consumptionValues.push(value);
+                anomalyValues.push(value);
+                normalValues.push(null);
+            } else {
+                consumptionValues.push(value);
+                anomalyValues.push(null);
+                normalValues.push(value);
+            }
+        }
+
+        // Energy consumption over time chart
+        const consumptionData = [
+            {
+                x: timestamps,
+                y: normalValues,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Normal Consumption',
+                line: {
+                    color: '#4b7bec',
+                    width: 2
+                }
+            },
+            {
+                x: timestamps,
+                y: anomalyValues,
+                type: 'scatter',
+                mode: 'markers',
+                name: 'Anomalies',
+                marker: {
+                    color: '#fc5c65',
+                    size: 12,
+                    symbol: 'circle'
+                }
+            }
+        ];
+        
+        const consumptionLayout = {
+            title: 'Energy Consumption Over Time',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0.2)',
+            font: { color: '#dfe4ea' },
+            margin: { l: 50, r: 50, t: 50, b: 50 },
+            xaxis: {
+                title: 'Date',
+                showgrid: true,
+                gridcolor: 'rgba(255,255,255,0.1)'
+            },
+            yaxis: {
+                title: 'Energy Usage (kWh)',
+                showgrid: true,
+                gridcolor: 'rgba(255,255,255,0.1)'
+            },
+            legend: {
+                orientation: 'h',
+                y: 1.1
+            }
+        };
+        
+        Plotly.newPlot('consumption-chart', consumptionData, consumptionLayout, {responsive: true});
+
+        // Anomaly pie chart
+        const pieData = [{
+            values: [3, 27],
+            labels: ['Anomalies', 'Normal'],
+            type: 'pie',
+            marker: {
+                colors: ['#fc5c65', '#4b7bec']
+            },
+            textinfo: 'percent',
+            insidetextfont: {
+                color: '#ffffff'
+            },
+            hoverinfo: 'label+percent+value'
+        }];
+        
+        const pieLayout = {
+            title: 'Anomalies vs. Normal Data Points',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0.2)',
+            font: { color: '#dfe4ea' },
+            margin: { l: 20, r: 20, t: 50, b: 20 }
+        };
+        
+        Plotly.newPlot('anomaly-pie-chart', pieData, pieLayout, {responsive: true});
+
+        // Time of day analysis
+        const hours = Array.from({length: 24}, (_, i) => i);
+        const hourlyConsumption = [
+            45, 30, 25, 20, 25, 40, 65, 90, 95, 85, 80, 90,
+            95, 85, 80, 90, 110, 130, 120, 100, 90, 80, 70, 55
+        ];
+        
+        const hourlyAnomalies = [
+            0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+            0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0
+        ];
+        
+        const timeOfDayData = [
+            {
+                x: hours,
+                y: hourlyConsumption,
+                type: 'bar',
+                name: 'Hourly Consumption',
+                marker: {
+                    color: '#4b7bec'
+                }
+            },
+            {
+                x: [7, 16, 16],
+                y: [95, 130, 130],
+                type: 'scatter',
+                mode: 'markers',
+                name: 'Anomalies',
+                marker: {
+                    color: '#fc5c65',
+                    size: 12,
+                    symbol: 'circle'
+                }
+            }
+        ];
+        
+        const timeOfDayLayout = {
+            title: 'Energy Usage by Hour of Day',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0.2)',
+            font: { color: '#dfe4ea' },
+            margin: { l: 50, r: 20, t: 50, b: 50 },
+            xaxis: {
+                title: 'Hour of Day',
+                tickvals: hours,
+                showgrid: true,
+                gridcolor: 'rgba(255,255,255,0.1)'
+            },
+            yaxis: {
+                title: 'Energy Usage (kWh)',
+                showgrid: true,
+                gridcolor: 'rgba(255,255,255,0.1)'
+            },
+            legend: {
+                orientation: 'h',
+                y: 1.1
+            }
+        };
+        
+        Plotly.newPlot('time-of-day-chart', timeOfDayData, timeOfDayLayout, {responsive: true});
+
+        // Heat map for weekly patterns
+        const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        
+        const heatmapData = [
+            {
+                z: [
+                    [70, 65, 60, 55, 50, 55, 60, 70, 85, 95, 90, 80, 85, 90, 95, 100, 110, 100, 90, 85, 80, 70, 65, 60],
+                    [50, 45, 40, 40, 45, 60, 85, 100, 110, 105, 100, 100, 105, 100, 105, 110, 115, 110, 95, 85, 75, 65, 60, 55],
+                    [55, 50, 45, 40, 45, 55, 80, 95, 105, 100, 95, 95, 100, 95, 100, 105, 110, 105, 90, 80, 70, 60, 55, 50],
+                    [50, 45, 40, 40, 45, 60, 85, 100, 110, 105, 100, 100, 105, 100, 105, 110, 115, 110, 95, 85, 75, 65, 60, 55],
+                    [55, 50, 45, 40, 45, 55, 80, 95, 105, 100, 95, 95, 100, 95, 100, 105, 110, 105, 90, 80, 70, 60, 55, 50],
+                    [60, 55, 50, 45, 50, 65, 90, 105, 115, 110, 105, 105, 110, 105, 110, 115, 120, 115, 100, 90, 80, 70, 65, 60],
+                    [75, 70, 65, 60, 55, 60, 65, 75, 90, 100, 95, 85, 90, 95, 100, 105, 115, 105, 95, 90, 85, 75, 70, 65]
+                ],
+                x: Array.from({length: 24}, (_, i) => i),
+                y: daysOfWeek,
+                type: 'heatmap',
+                colorscale: 'Viridis',
+                showscale: true,
+                colorbar: {
+                    title: 'kWh',
+                    titleside: 'right'
+                }
+            }
+        ];
+        
+        const heatmapLayout = {
+            title: 'Weekly Energy Usage Patterns',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0.2)',
+            font: { color: '#dfe4ea' },
+            margin: { l: 100, r: 50, t: 50, b: 50 },
+            xaxis: {
+                title: 'Hour of Day',
+                showgrid: false
+            },
+            yaxis: {
+                title: 'Day of Week',
+                showgrid: false
+            }
+        };
+        
+        Plotly.newPlot('heat-map-chart', heatmapData, heatmapLayout, {responsive: true});
+    });
+</script>
+{% endblock %}
