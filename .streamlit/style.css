@@ -67,3 +67,29 @@ div[data-testid="stDecoration"] {
 .stPlotlyChart > div {
     border-radius: 0.5rem;
 }
+
+/* Performance optimizations */
+.stApp {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* Reduce animation times for quicker response */
+* {
+    transition-duration: 0.1s !important;
+    animation-duration: 0.1s !important;
+}
+
+/* Hide loading animation to avoid slowdowns */
+.stSpinner {
+    opacity: 0.5 !important;
+}
+
+/* Optimize sidebar performance */
+[data-testid="stSidebar"] {
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+}
